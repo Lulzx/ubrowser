@@ -65,19 +65,31 @@ inp#e3@p~"Password"
 
 ## Install
 
-**Claude Code Plugin (Recommended):**
+### Claude Code Plugin (Recommended)
+
 ```bash
-/plugin marketplace add lulzx/ubrowser
-/plugin install ubrowser@lulzx/ubrowser
+# Add the marketplace
+/plugin marketplace add lulzx/claude-code
+
+# Install ubrowser
+/plugin install ubrowser@claude-code
 ```
 
-**Manual:**
+After installation, restart Claude Code. The ubrowser MCP server will be available automatically.
+
+### Manual Installation
+
 ```bash
 git clone https://github.com/lulzx/ubrowser && cd ubrowser
 npm install && npx playwright install chromium && npm run build
 ```
 
-Add to `~/.claude/claude_desktop_config.json`:
+Then add to Claude Code:
+```bash
+claude mcp add ubrowser -- node /path/to/ubrowser/build/index.js
+```
+
+Or add to `~/.claude.json`:
 ```json
 {"mcpServers": {"ubrowser": {"command": "node", "args": ["/path/to/ubrowser/build/index.js"]}}}
 ```
