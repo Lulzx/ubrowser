@@ -123,6 +123,19 @@ sel#e4"Country"          → <select>Country</select>
 
 **Flags:** `!d`=disabled `!c`=checked `!r`=required
 
+## Feature Comparison
+
+|                          | Playwright MCP | Dev Browser | μBrowser |
+|--------------------------|:--------------:|:-----------:|:--------:|
+| Navigate, click, type    | ✓              | ✓           | ✓        |
+| Element refs             | —              | ✓           | ✓        |
+| Multi-tab support        | —              | ✓           | ✓        |
+| Batch execution          | —              | —           | ✓        |
+| Compact snapshot format  | —              | —           | ✓        |
+| Scoped snapshots         | —              | partial     | ✓        |
+| Diff snapshots           | —              | —           | ✓        |
+| Configurable responses   | —              | —           | ✓        |
+
 ## Architecture
 
 ```
