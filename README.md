@@ -119,6 +119,21 @@ Batch error:
 | Scoped snapshots | 60-80% |
 | Diff-based updates | 70-90% |
 
+## Feature Comparison
+
+| Feature | Playwright MCP | Dev Browser | μBrowser |
+|---------|---------------|-------------|----------|
+| Navigate | Yes | Yes | Yes |
+| Click/Type/Select | Yes | Yes | Yes |
+| Scroll | Yes | Yes | Yes |
+| Element Refs | No | Yes | Yes |
+| Named Pages | No | Yes | Yes |
+| **Batch Execution** | No | No | **Yes** |
+| **Minimal Responses** | No | No | **Yes** |
+| **Diff Updates** | No | No | **Yes** |
+| **Scoped Snapshots** | No | Partial | **Yes** |
+| **Ultra-Compact Format** | JSON | YAML | **70%+ smaller** |
+
 ## License
 
 MIT
