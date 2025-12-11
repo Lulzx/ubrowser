@@ -105,7 +105,7 @@ server.tool(scrollTool.name, scrollTool.description, {
 // Register browser_snapshot tool
 server.tool(snapshotTool.name, snapshotTool.description, {
     scope: z.string().optional(),
-    format: z.enum(['full', 'diff', 'minimal']).optional(),
+    format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     maxElements: z.number().optional(),
 }, async (args) => {
     const result = await executeSnapshot(args);
@@ -136,7 +136,7 @@ server.tool(inspectTool.name, inspectTool.description, {
     selector: z.string().describe('CSS selector'),
     depth: z.number().optional(),
     includeText: z.boolean().optional(),
-    format: z.enum(['full', 'minimal']).optional(),
+    format: z.enum(['compact', 'full', 'minimal']).optional(),
 }, async (args) => {
     const result = await executeInspect(args);
     return {

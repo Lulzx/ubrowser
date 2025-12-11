@@ -152,7 +152,7 @@ server.tool(
   snapshotTool.description,
   {
     scope: z.string().optional(),
-    format: z.enum(['full', 'diff', 'minimal']).optional(),
+    format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     maxElements: z.number().optional(),
   },
   async (args) => {
@@ -195,7 +195,7 @@ server.tool(
     selector: z.string().describe('CSS selector'),
     depth: z.number().optional(),
     includeText: z.boolean().optional(),
-    format: z.enum(['full', 'minimal']).optional(),
+    format: z.enum(['compact', 'full', 'minimal']).optional(),
   },
   async (args) => {
     const result = await executeInspect(args);

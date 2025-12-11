@@ -8,7 +8,7 @@ export const inspectSchema = z.object({
     selector: z.string().describe('CSS selector of element to inspect'),
     depth: z.number().optional().describe('Max depth of nested elements to include (default: 3)'),
     includeText: z.boolean().optional().describe('Include text content of elements'),
-    format: z.enum(['full', 'minimal']).optional().describe('Output format'),
+    format: z.enum(['compact', 'full', 'minimal']).optional().describe('Output format (default: compact)'),
 });
 // Execute inspect
 export async function executeInspect(input) {
@@ -60,7 +60,7 @@ export async function executeInspect(input) {
             const title = await page.title();
             const elements = await extractInteractiveElements(page, input.selector);
             const refs = filterElements(elements, { maxElements: 50 });
-            result.snapshot = formatSnapshot(refs, url, title, 'full');
+            result.snapshot = formatSnapshot(refs, url, title, input.format ?? 'compact');
         }
         return result;
     }
@@ -82,7 +82,7 @@ export const inspectTool = {
             selector: { type: 'string', description: 'CSS selector of element to inspect' },
             depth: { type: 'number', description: 'Max depth of nested elements (default: 3)' },
             includeText: { type: 'boolean', description: 'Include text content' },
-            format: { type: 'string', enum: ['full', 'minimal'], description: 'Output format' },
+            format: { type: 'string', enum: ['compact', 'full', 'minimal'], description: 'Output format (default: compact)' },
         },
         required: ['selector'],
     },

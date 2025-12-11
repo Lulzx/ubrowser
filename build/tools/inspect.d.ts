@@ -3,15 +3,15 @@ export declare const inspectSchema: z.ZodObject<{
     selector: z.ZodString;
     depth: z.ZodOptional<z.ZodNumber>;
     includeText: z.ZodOptional<z.ZodBoolean>;
-    format: z.ZodOptional<z.ZodEnum<["full", "minimal"]>>;
+    format: z.ZodOptional<z.ZodEnum<["compact", "full", "minimal"]>>;
 }, "strip", z.ZodTypeAny, {
     selector: string;
-    format?: "full" | "minimal" | undefined;
+    format?: "compact" | "full" | "minimal" | undefined;
     depth?: number | undefined;
     includeText?: boolean | undefined;
 }, {
     selector: string;
-    format?: "full" | "minimal" | undefined;
+    format?: "compact" | "full" | "minimal" | undefined;
     depth?: number | undefined;
     includeText?: boolean | undefined;
 }>;
