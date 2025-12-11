@@ -120,7 +120,12 @@ export const batchTool = {
 Example - Login flow:
 {"steps":[{"tool":"navigate","args":{"url":"/login"}},{"tool":"type","args":{"selector":"#email","text":"test@test.com"}},{"tool":"type","args":{"selector":"#password","text":"secret"}},{"tool":"click","args":{"selector":"button[type=submit]"}}],"snapshot":{"when":"final"}}
 
-Saves 80%+ tokens vs individual calls. Uses ultra-compact snapshot format by default.`,
+Returns ultra-compact snapshot format: tag#ref@type~"placeholder"/href"text"!flags
+- btn#e1"Submit" = button, click with ref "e1"
+- inp#e2@e~"Email" = email input with placeholder
+- a#e3/login"Sign in" = link to /login
+- Types: @e=email @p=password @t=text @c=checkbox
+- Flags: !d=disabled !c=checked !r=required`,
   inputSchema: {
     type: 'object' as const,
     properties: {
