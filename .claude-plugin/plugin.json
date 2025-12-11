@@ -1,0 +1,17 @@
+{
+  "name": "ubrowser",
+  "version": "1.0.0",
+  "description": "Ultra-fast browser automation with 98% token reduction via batch execution and compact snapshots",
+  "author": {
+    "name": "lulzx"
+  },
+  "homepage": "https://github.com/lulzx/ubrowser",
+  "keywords": ["browser", "playwright", "automation", "mcp", "web", "scraping"],
+  "skills": ["./skills/ubrowser"],
+  "mcpServers": {
+    "ubrowser": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/build/index.js"]
+    }
+  }
+}

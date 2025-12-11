@@ -75,23 +75,14 @@ inp#e3@p~"Password"
 /plugin install ubrowser@claude-code
 ```
 
-After installation, restart Claude Code. The ubrowser MCP server will be available automatically.
+That's it! Restart Claude Code and the ubrowser MCP tools are ready to use.
 
 ### Manual Installation
 
 ```bash
 git clone https://github.com/lulzx/ubrowser && cd ubrowser
 npm install && npx playwright install chromium && npm run build
-```
-
-Then add to Claude Code:
-```bash
-claude mcp add ubrowser -- node /path/to/ubrowser/build/index.js
-```
-
-Or add to `~/.claude.json`:
-```json
-{"mcpServers": {"ubrowser": {"command": "node", "args": ["/path/to/ubrowser/build/index.js"]}}}
+claude mcp add ubrowser -- node "$PWD/build/index.js"
 ```
 
 ## Tools
