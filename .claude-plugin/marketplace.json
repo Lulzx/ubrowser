@@ -1,22 +1,21 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "claude-code",
-  "version": "1.0.0",
-  "description": "lulzx's Claude Code plugins",
+  "name": "ubrowser-marketplace",
   "owner": {
     "name": "lulzx",
-    "url": "https://github.com/lulzx"
+    "email": "root@lulzx.com"
   },
   "plugins": [
     {
       "name": "ubrowser",
-      "source": "../plugins/ubrowser",
-      "description": "The fastest, cheapest browser automation for Claude. 2.2x faster, 70% fewer tokens.",
-      "version": "1.0.0",
-      "author": {
-        "name": "lulzx"
-      },
-      "category": "automation"
+      "source": "./",
+      "description": "Ultra-fast browser automation with 70% token reduction via batch execution and compact snapshots",
+      "strict": false,
+      "keywords": ["browser", "playwright", "automation", "mcp", "web", "scraping"],
+      "skills": ["./skills/ubrowser"]
     }
-  ]
+  ],
+  "metadata": {
+    "description": "μBrowser - Micro browser automation for Claude Code",
+    "version": "1.0.0"
+  }
 }

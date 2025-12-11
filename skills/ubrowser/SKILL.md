@@ -4,20 +4,17 @@ Control a headless browser with 98% token reduction compared to Playwright MCP a
 
 ## Setup
 
-Before using this skill, ensure dependencies are installed:
+Start the ubrowser server before using browser tools:
 
 ```bash
-cd "${CLAUDE_PLUGIN_ROOT}"
-npm install
-npx playwright install chromium
-npm run build
+./skills/ubrowser/server.sh &
 ```
 
-## MCP Server
+Wait for "μBrowser MCP server started" message. First run installs dependencies and downloads Playwright Chromium.
 
-This skill provides browser automation via MCP. The server runs at:
-```
-node "${CLAUDE_PLUGIN_ROOT}/build/index.js"
+Use `--headless` flag for headless mode:
+```bash
+./skills/ubrowser/server.sh --headless &
 ```
 
 ## Key Optimization: Batch Execution
