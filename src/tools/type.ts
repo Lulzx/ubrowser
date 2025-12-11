@@ -17,7 +17,7 @@ export const typeSchema = z.object({
   snapshot: z.object({
     include: z.boolean().optional(),
     scope: z.string().optional(),
-    format: z.enum(['full', 'diff', 'minimal']).optional(),
+    format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
   }).optional(),
   timeout: z.number().optional(),
 }).refine(data => data.ref || data.selector, {
@@ -61,7 +61,7 @@ export async function executeType(input: TypeInput): Promise<ToolResponse> {
         refs,
         url,
         title,
-        input.snapshot.format ?? 'full'
+        input.snapshot.format ?? 'compact'
       );
     }
 
@@ -92,7 +92,7 @@ export const typeTool = {
         properties: {
           include: { type: 'boolean' },
           scope: { type: 'string' },
-          format: { type: 'string', enum: ['full', 'diff', 'minimal'] },
+          format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
         },
       },
       timeout: { type: 'number' },

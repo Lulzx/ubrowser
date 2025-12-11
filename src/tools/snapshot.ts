@@ -8,7 +8,7 @@ import type { ToolResponse } from '../types.js';
 // Schema for snapshot tool
 export const snapshotSchema = z.object({
   scope: z.string().optional().describe('CSS selector to scope the snapshot'),
-  format: z.enum(['full', 'diff', 'minimal']).optional().describe('Snapshot format (default: full)'),
+  format: z.enum(['compact', 'full', 'diff', 'minimal']).optional().describe('Snapshot format (default: compact)'),
   maxElements: z.number().optional().describe('Maximum number of elements to return'),
 });
 
@@ -31,7 +31,7 @@ export async function executeSnapshot(input: SnapshotInput): Promise<ToolRespons
       refs,
       url,
       title,
-      input.format ?? 'full'
+      input.format ?? 'compact'
     );
 
     return {
@@ -56,7 +56,7 @@ export const snapshotTool = {
     type: 'object' as const,
     properties: {
       scope: { type: 'string', description: 'CSS selector to scope the snapshot' },
-      format: { type: 'string', enum: ['full', 'diff', 'minimal'], description: 'Snapshot format (default: full)' },
+      format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'], description: 'Snapshot format (default: compact)' },
       maxElements: { type: 'number', description: 'Maximum number of elements to return' },
     },
     required: [],

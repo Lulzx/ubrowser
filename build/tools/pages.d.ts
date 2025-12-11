@@ -4,27 +4,27 @@ export declare const pagesSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     snapshot: z.ZodOptional<z.ZodObject<{
         include: z.ZodOptional<z.ZodBoolean>;
-        format: z.ZodOptional<z.ZodEnum<["full", "diff", "minimal"]>>;
+        format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
     }, "strip", z.ZodTypeAny, {
         include?: boolean | undefined;
-        format?: "full" | "diff" | "minimal" | undefined;
+        format?: "compact" | "full" | "diff" | "minimal" | undefined;
     }, {
         include?: boolean | undefined;
-        format?: "full" | "diff" | "minimal" | undefined;
+        format?: "compact" | "full" | "diff" | "minimal" | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
     action: "switch" | "list" | "create" | "close";
     name?: string | undefined;
     snapshot?: {
         include?: boolean | undefined;
-        format?: "full" | "diff" | "minimal" | undefined;
+        format?: "compact" | "full" | "diff" | "minimal" | undefined;
     } | undefined;
 }, {
     action: "switch" | "list" | "create" | "close";
     name?: string | undefined;
     snapshot?: {
         include?: boolean | undefined;
-        format?: "full" | "diff" | "minimal" | undefined;
+        format?: "compact" | "full" | "diff" | "minimal" | undefined;
     } | undefined;
 }>;
 export type PagesInput = z.infer<typeof pagesSchema>;

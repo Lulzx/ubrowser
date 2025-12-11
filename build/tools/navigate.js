@@ -12,7 +12,7 @@ export const navigateSchema = z.object({
     snapshot: z.object({
         include: z.boolean().optional().describe('Include snapshot in response'),
         scope: z.string().optional().describe('CSS selector to scope snapshot'),
-        format: z.enum(['full', 'diff', 'minimal']).optional().describe('Snapshot format'),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional().describe('Snapshot format'),
     }).optional().describe('Snapshot options'),
     timeout: z.number().optional().describe('Timeout in ms (default: 30000)'),
 });
@@ -41,7 +41,7 @@ export async function executeNavigate(input) {
         if (input.snapshot?.include) {
             const elements = await extractInteractiveElements(page, input.snapshot.scope);
             const refs = filterElements(elements);
-            response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'full');
+            response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
         }
         return response;
     }
@@ -70,7 +70,7 @@ export const navigateTool = {
                 properties: {
                     include: { type: 'boolean', description: 'Include snapshot in response' },
                     scope: { type: 'string', description: 'CSS selector to scope snapshot' },
-                    format: { type: 'string', enum: ['full', 'diff', 'minimal'], description: 'Snapshot format' },
+                    format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'], description: 'Snapshot format' },
                 },
                 description: 'Snapshot options',
             },

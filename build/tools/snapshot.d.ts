@@ -2,15 +2,15 @@ import { z } from 'zod';
 import type { ToolResponse } from '../types.js';
 export declare const snapshotSchema: z.ZodObject<{
     scope: z.ZodOptional<z.ZodString>;
-    format: z.ZodOptional<z.ZodEnum<["full", "diff", "minimal"]>>;
+    format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
     maxElements: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     scope?: string | undefined;
-    format?: "full" | "diff" | "minimal" | undefined;
+    format?: "compact" | "full" | "diff" | "minimal" | undefined;
     maxElements?: number | undefined;
 }, {
     scope?: string | undefined;
-    format?: "full" | "diff" | "minimal" | undefined;
+    format?: "compact" | "full" | "diff" | "minimal" | undefined;
     maxElements?: number | undefined;
 }>;
 export type SnapshotInput = z.infer<typeof snapshotSchema>;

@@ -16,13 +16,13 @@ server.tool(navigateTool.name, navigateTool.description, {
     snapshot: z.object({
         include: z.boolean().optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
     const result = await executeNavigate(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_click tool
@@ -34,13 +34,13 @@ server.tool(clickTool.name, clickTool.description, {
     snapshot: z.object({
         include: z.boolean().optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
     const result = await executeClick(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_type tool
@@ -54,13 +54,13 @@ server.tool(typeTool.name, typeTool.description, {
     snapshot: z.object({
         include: z.boolean().optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
     const result = await executeType(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_select tool
@@ -73,13 +73,13 @@ server.tool(selectTool.name, selectTool.description, {
     snapshot: z.object({
         include: z.boolean().optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
     const result = await executeSelect(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_scroll tool
@@ -93,13 +93,13 @@ server.tool(scrollTool.name, scrollTool.description, {
     snapshot: z.object({
         include: z.boolean().optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
     const result = await executeScroll(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_snapshot tool
@@ -110,7 +110,7 @@ server.tool(snapshotTool.name, snapshotTool.description, {
 }, async (args) => {
     const result = await executeSnapshot(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_batch tool - THE KEY OPTIMIZATION
@@ -122,13 +122,13 @@ server.tool(batchTool.name, batchTool.description, {
     snapshot: z.object({
         when: z.enum(['never', 'final', 'each', 'on-error']).optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff']).optional(),
+        format: z.enum(['compact', 'full', 'diff']).optional(),
     }).optional(),
     stopOnError: z.boolean().optional(),
 }, async (args) => {
     const result = await executeBatch(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_inspect tool
@@ -140,7 +140,7 @@ server.tool(inspectTool.name, inspectTool.description, {
 }, async (args) => {
     const result = await executeInspect(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Register browser_pages tool - Named pages for multi-page workflows
@@ -149,12 +149,12 @@ server.tool(pagesTool.name, pagesTool.description, {
     name: z.string().optional().describe('Page name'),
     snapshot: z.object({
         include: z.boolean().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
 }, async (args) => {
     const result = await executePages(args);
     return {
-        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(result) }],
     };
 });
 // Handle process signals for cleanup

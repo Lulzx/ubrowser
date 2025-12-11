@@ -10,7 +10,7 @@ export const pagesSchema = z.object({
     name: z.string().optional().describe('Page name (required for create/switch/close)'),
     snapshot: z.object({
         include: z.boolean().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional().describe('Include snapshot after switching'),
 });
 // Execute pages action
@@ -46,7 +46,7 @@ export async function executePages(input) {
                     const title = await page.title();
                     const elements = await extractInteractiveElements(page);
                     const refs = filterElements(elements);
-                    result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'full');
+                    result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
                 }
                 return result;
             }
@@ -69,7 +69,7 @@ export async function executePages(input) {
                     const title = await page.title();
                     const elements = await extractInteractiveElements(page);
                     const refs = filterElements(elements);
-                    result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'full');
+                    result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
                 }
                 return result;
             }
@@ -125,7 +125,7 @@ Example: Open login in one page, dashboard in another:
                 type: 'object',
                 properties: {
                     include: { type: 'boolean' },
-                    format: { type: 'string', enum: ['full', 'diff', 'minimal'] },
+                    format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
                 },
             },
         },

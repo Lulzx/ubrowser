@@ -17,7 +17,7 @@ export const batchSchema = z.object({
     snapshot: z.object({
         when: z.enum(['never', 'final', 'each', 'on-error']).optional().describe('When to take snapshots'),
         scope: z.string().optional().describe('CSS selector to scope snapshots'),
-        format: z.enum(['full', 'diff']).optional().describe('Snapshot format'),
+        format: z.enum(['compact', 'full', 'diff']).optional().describe('Snapshot format (default: compact)'),
     }).optional().describe('Snapshot options'),
     stopOnError: z.boolean().optional().describe('Stop execution on first error (default: true)'),
 });
@@ -43,86 +43,63 @@ async function executeStep(step) {
             return { ok: false, error: `Unknown tool: ${step.tool}` };
     }
 }
-// Execute batch
+// Execute batch - returns minified result for token efficiency
 export async function executeBatch(input) {
     const page = await browserManager.getPage();
     const snapshotConfig = input.snapshot ?? { when: 'final' };
     const stopOnError = input.stopOnError !== false;
-    const result = {
-        ok: true,
-        stepsCompleted: 0,
-        stepsTotal: input.steps.length,
-        stepResults: [],
-    };
+    const result = { ok: true };
+    let completed = 0;
     for (let i = 0; i < input.steps.length; i++) {
         const step = input.steps[i];
-        // Execute the step
         const stepResult = await executeStep(step);
-        result.stepResults.push({
-            step: i,
-            ok: stepResult.ok,
-            error: stepResult.error,
-        });
         if (stepResult.ok) {
-            result.stepsCompleted++;
+            completed++;
             // Take snapshot after each step if configured
             if (snapshotConfig.when === 'each') {
                 const url = page.url();
                 const title = await page.title();
                 const elements = await extractInteractiveElements(page, snapshotConfig.scope);
                 const refs = filterElements(elements);
-                result.snapshot = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'full');
+                result.snap = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'compact');
             }
         }
         else {
             result.ok = false;
-            result.error = stepResult.error;
-            result.failedStep = i;
+            result.err = stepResult.error;
+            result.at = i;
+            result.n = completed;
             // Take snapshot on error if configured
             if (snapshotConfig.when === 'on-error') {
                 const url = page.url();
                 const title = await page.title();
                 const elements = await extractInteractiveElements(page, snapshotConfig.scope);
                 const refs = filterElements(elements);
-                result.snapshot = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'full');
+                result.snap = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'compact');
             }
             if (stopOnError)
                 break;
         }
     }
-    // Take final snapshot if all steps completed (or configured for final)
+    // Take final snapshot if configured
     if (snapshotConfig.when === 'final' && (result.ok || !stopOnError)) {
         const url = page.url();
         const title = await page.title();
         const elements = await extractInteractiveElements(page, snapshotConfig.scope);
         const refs = filterElements(elements);
-        result.snapshot = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'full');
-        result.url = url;
-        result.title = title;
-    }
-    // Clean up stepResults if not needed
-    if (result.ok && !input.snapshot) {
-        delete result.stepResults;
+        result.snap = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'compact');
     }
     return result;
 }
 // Tool definition for MCP
 export const batchTool = {
     name: 'browser_batch',
-    description: `Execute multiple browser actions in sequence. This is the KEY OPTIMIZATION - use this instead of individual tool calls to reduce tokens by 60-80%.
+    description: `Execute multiple browser actions in ONE call. ALWAYS use this for multi-step flows.
 
-Example: Login flow in ONE call:
-{
-  "steps": [
-    {"tool": "navigate", "args": {"url": "/login"}},
-    {"tool": "type", "args": {"selector": "#email", "text": "test@test.com"}},
-    {"tool": "type", "args": {"selector": "#password", "text": "secret"}},
-    {"tool": "click", "args": {"selector": "button[type=submit]"}}
-  ],
-  "snapshot": {"when": "final", "scope": ".dashboard"}
-}
+Example - Login flow:
+{"steps":[{"tool":"navigate","args":{"url":"/login"}},{"tool":"type","args":{"selector":"#email","text":"test@test.com"}},{"tool":"type","args":{"selector":"#password","text":"secret"}},{"tool":"click","args":{"selector":"button[type=submit]"}}],"snapshot":{"when":"final"}}
 
-This saves 4 separate tool calls and only returns 1 snapshot instead of 4.`,
+Saves 80%+ tokens vs individual calls. Uses ultra-compact snapshot format by default.`,
     inputSchema: {
         type: 'object',
         properties: {
@@ -143,7 +120,7 @@ This saves 4 separate tool calls and only returns 1 snapshot instead of 4.`,
                 properties: {
                     when: { type: 'string', enum: ['never', 'final', 'each', 'on-error'], description: 'When to take snapshots (default: final)' },
                     scope: { type: 'string', description: 'CSS selector to scope snapshots' },
-                    format: { type: 'string', enum: ['full', 'diff'], description: 'Snapshot format' },
+                    format: { type: 'string', enum: ['compact', 'full', 'diff'], description: 'Snapshot format (default: compact)' },
                 },
             },
             stopOnError: { type: 'boolean', description: 'Stop on first error (default: true)' },

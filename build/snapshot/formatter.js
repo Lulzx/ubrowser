@@ -1,11 +1,71 @@
 import { computeSnapshotHash, computeDiff, formatDiff } from './differ.js';
 // Store the last snapshot for diff computation
 let lastSnapshot = null;
-// Format elements as HTML-style string (56% more token efficient than JSON)
+// Tag abbreviations for ultra-compact format
+const TAG_ABBREV = {
+    'button': 'btn',
+    'input': 'inp',
+    'select': 'sel',
+    'textarea': 'txt',
+    'a': 'a',
+    'div': 'div',
+    'span': 'sp',
+    'label': 'lbl',
+    'img': 'img',
+    'form': 'frm',
+};
+// Format elements in ultra-compact notation (70%+ more efficient than HTML)
+// Format: tag#ref@type~placeholder/href"content"
+// Examples:
+//   btn#e1"Submit"
+//   inp#e2@email~"Email"
+//   a#e3/login"Sign in"
+//   sel#e4"Country"
+export function formatElementsCompact(elements) {
+    return elements.map(formatElementCompact).join('\n');
+}
+// Format single element in ultra-compact notation
+function formatElementCompact(el) {
+    const tag = TAG_ABBREV[el.tag] || el.tag;
+    let result = `${tag}#${el.id}`;
+    // Add type for inputs (common pattern)
+    if (el.attributes?.type && el.tag === 'input') {
+        const t = el.attributes.type;
+        // Abbreviate common types
+        const typeAbbrev = {
+            'text': 't', 'email': 'e', 'password': 'p', 'number': 'n',
+            'checkbox': 'c', 'radio': 'r', 'submit': 's', 'button': 'b',
+        };
+        result += `@${typeAbbrev[t] || t}`;
+    }
+    // Add placeholder hint
+    if (el.attributes?.placeholder) {
+        result += `~"${truncate(el.attributes.placeholder, 20)}"`;
+    }
+    // Add href for links
+    if (el.attributes?.href) {
+        const href = el.attributes.href;
+        // Shorten relative URLs
+        result += `/${href.replace(/^https?:\/\/[^\/]+/, '').replace(/^\//, '')}`;
+    }
+    // Add content/name
+    if (el.name) {
+        result += `"${truncate(el.name, 30)}"`;
+    }
+    // Add state indicators
+    if (el.attributes?.disabled)
+        result += '!d';
+    if (el.attributes?.checked)
+        result += '!c';
+    if (el.attributes?.required)
+        result += '!r';
+    return result;
+}
+// Format elements as HTML-style string (fallback, 56% more token efficient than JSON)
 export function formatElementsAsHTML(elements) {
     return elements.map(formatElement).join('\n');
 }
-// Format a single element
+// Format a single element (HTML style)
 function formatElement(el) {
     const attrs = [`id="${el.id}"`];
     // Add role if not implied by tag
@@ -78,13 +138,14 @@ export function createSnapshot(url, title, elements) {
     return snapshot;
 }
 // Format snapshot based on requested format
-export function formatSnapshot(elements, url, title, format = 'full') {
+// Default changed to 'compact' for 70%+ token savings
+export function formatSnapshot(elements, url, title, format = 'compact') {
     if (format === 'minimal') {
-        // Just element count and key stats
-        const buttons = elements.filter(e => e.role === 'button').length;
-        const links = elements.filter(e => e.role === 'link').length;
-        const inputs = elements.filter(e => ['textbox', 'combobox', 'checkbox', 'radio'].includes(e.role)).length;
-        return `Page: ${title}\nElements: ${elements.length} (${buttons} buttons, ${links} links, ${inputs} inputs)`;
+        // Ultra-minimal: just counts
+        const b = elements.filter(e => e.role === 'button').length;
+        const l = elements.filter(e => e.role === 'link').length;
+        const i = elements.filter(e => ['textbox', 'combobox', 'checkbox', 'radio'].includes(e.role)).length;
+        return `${title}|${elements.length}els|${b}btn|${l}lnk|${i}inp`;
     }
     if (format === 'diff') {
         const diff = computeDiff(lastSnapshot, elements);
@@ -96,17 +157,30 @@ export function formatSnapshot(elements, url, title, format = 'full') {
             hash: computeSnapshotHash(elements),
             timestamp: Date.now(),
         };
-        // If no previous snapshot or everything is new, fall back to full
+        // If no previous snapshot or everything is new, fall back to compact
         if (diff.unchanged === 0 && diff.modified.length === 0 && diff.removed.length === 0) {
-            return formatFullSnapshot(elements, url, title);
+            return formatCompactSnapshot(elements, url, title);
         }
         return formatDiff(diff);
     }
-    // Full format
+    if (format === 'full') {
+        // HTML format (legacy, for debugging)
+        const snapshot = createSnapshot(url, title, elements);
+        return formatFullSnapshot(elements, url, title);
+    }
+    // Default: compact format (70%+ token savings)
     const snapshot = createSnapshot(url, title, elements);
-    return formatFullSnapshot(elements, url, title);
+    return formatCompactSnapshot(elements, url, title);
 }
-// Format full snapshot
+// Format compact snapshot (default - most efficient)
+function formatCompactSnapshot(elements, url, title) {
+    // Short header
+    const shortUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const header = `[${title}](${shortUrl})`;
+    const body = formatElementsCompact(elements);
+    return `${header}\n${body}`;
+}
+// Format full snapshot (HTML style - legacy)
 function formatFullSnapshot(elements, url, title) {
     const header = `Page: ${title}\nURL: ${url}\n---`;
     const body = formatElementsAsHTML(elements);

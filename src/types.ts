@@ -40,7 +40,7 @@ export interface ToolResponse {
 export interface SnapshotOptions {
   include?: boolean;      // Default: false
   scope?: string;         // CSS selector to scope
-  format?: 'full' | 'diff' | 'minimal';
+  format?: 'compact' | 'full' | 'diff' | 'minimal';
 }
 
 // Common tool options
@@ -59,7 +59,7 @@ export interface BatchStep {
 export interface BatchSnapshotOptions {
   when: 'never' | 'final' | 'each' | 'on-error';
   scope?: string;
-  format?: 'full' | 'diff';
+  format?: 'compact' | 'full' | 'diff';
 }
 
 // Browser state

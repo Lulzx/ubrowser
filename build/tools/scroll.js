@@ -15,7 +15,7 @@ export const scrollSchema = z.object({
     snapshot: z.object({
         include: z.boolean().optional(),
         scope: z.string().optional(),
-        format: z.enum(['full', 'diff', 'minimal']).optional(),
+        format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
     }).optional(),
     timeout: z.number().optional(),
 });
@@ -55,7 +55,7 @@ export async function executeScroll(input) {
             const title = await page.title();
             const elements = await extractInteractiveElements(page, input.snapshot.scope);
             const refs = filterElements(elements);
-            response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'full');
+            response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
         }
         return response;
     }
@@ -84,7 +84,7 @@ export const scrollTool = {
                 properties: {
                     include: { type: 'boolean' },
                     scope: { type: 'string' },
-                    format: { type: 'string', enum: ['full', 'diff', 'minimal'] },
+                    format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
                 },
             },
             timeout: { type: 'number' },
