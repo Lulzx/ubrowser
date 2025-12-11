@@ -1,0 +1,15 @@
+{
+  "name": "ubrowser",
+  "version": "1.0.0",
+  "description": "μBrowser - Ultra-fast browser automation with 70% token savings",
+  "author": {
+    "name": "lulzx",
+    "url": "https://github.com/lulzx"
+  },
+  "mcpServers": {
+    "ubrowser": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/../../build/index.js"]
+    }
+  }
+}
