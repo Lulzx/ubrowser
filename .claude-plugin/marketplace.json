@@ -1,5 +1,8 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ubrowser",
+  "version": "1.0.0",
+  "description": "μBrowser - Micro browser automation plugin marketplace",
   "owner": {
     "name": "lulzx",
     "url": "https://github.com/lulzx"
@@ -7,14 +10,13 @@
   "plugins": [
     {
       "name": "ubrowser",
-      "source": "./",
+      "source": "./plugins/ubrowser",
       "description": "μBrowser - Micro browser automation with 98% token reduction through batch execution, minimal responses, and efficient HTML formatting",
       "version": "1.0.0",
       "author": {
         "name": "lulzx"
       },
-      "category": "automation",
-      "tags": ["browser", "playwright", "web", "automation", "mcp", "token-efficient", "micro"]
+      "category": "automation"
     }
   ]
 }

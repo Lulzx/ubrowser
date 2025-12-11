@@ -20,5 +20,5 @@
     "token-efficient",
     "micro"
   ],
-  "mcpServers": "../.mcp.json"
+  "mcpServers": "../../../.mcp.json"
 }
