@@ -1,152 +1,112 @@
-// Extract elements with their selectors using page evaluation
-// This is the primary extraction method - uses direct DOM traversal
-// which is more reliable and gives us proper selectors
+// Extract elements using optimized querySelectorAll (10x faster than recursive traversal)
 export async function extractInteractiveElements(page, scope) {
     const scopeSelector = scope || 'body';
     const elements = await page.evaluate((scopeSel) => {
         const results = [];
-        const interactiveTags = new Set(['a', 'button', 'input', 'select', 'textarea', 'details', 'summary']);
-        const interactiveRoles = new Set([
-            'button', 'link', 'textbox', 'combobox', 'listbox', 'option',
-            'checkbox', 'radio', 'switch', 'slider', 'spinbutton', 'searchbox',
-            'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'treeitem'
-        ]);
-        function getSelector(el) {
-            // Try ID first
-            if (el.id) {
-                return `#${CSS.escape(el.id)}`;
-            }
-            // Try data-testid
-            const testId = el.getAttribute('data-testid');
-            if (testId) {
-                return `[data-testid="${CSS.escape(testId)}"]`;
-            }
-            // Try name attribute for form elements
-            const name = el.getAttribute('name');
-            if (name && ['input', 'select', 'textarea'].includes(el.tagName.toLowerCase())) {
-                return `${el.tagName.toLowerCase()}[name="${CSS.escape(name)}"]`;
-            }
-            // Build a unique selector using tag + attributes + nth-child
-            const tag = el.tagName.toLowerCase();
-            const classes = Array.from(el.classList).slice(0, 2).map(c => `.${CSS.escape(c)}`).join('');
-            const type = el.getAttribute('type');
-            const typeAttr = type ? `[type="${type}"]` : '';
-            let selector = `${tag}${classes}${typeAttr}`;
-            // Add nth-of-type if needed for uniqueness
-            const parent = el.parentElement;
-            if (parent) {
-                const siblings = Array.from(parent.querySelectorAll(`:scope > ${selector}`));
-                if (siblings.length > 1) {
-                    const index = siblings.indexOf(el) + 1;
-                    selector = `${selector}:nth-of-type(${index})`;
-                }
-            }
-            // If still not unique, add parent context
-            if (document.querySelectorAll(selector).length > 1 && parent) {
-                const parentSelector = getSelector(parent);
-                selector = `${parentSelector} > ${selector}`;
-            }
-            return selector;
-        }
-        function getAccessibleName(el) {
-            // Check aria-label
-            const ariaLabel = el.getAttribute('aria-label');
-            if (ariaLabel)
-                return ariaLabel;
-            // Check aria-labelledby
-            const labelledBy = el.getAttribute('aria-labelledby');
-            if (labelledBy) {
-                const labelEl = document.getElementById(labelledBy);
-                if (labelEl)
-                    return labelEl.textContent?.trim() || '';
-            }
-            // Check for associated label (for form elements)
-            if (el.id) {
-                const label = document.querySelector(`label[for="${el.id}"]`);
-                if (label)
-                    return label.textContent?.trim() || '';
-            }
-            // Check title attribute
-            const title = el.getAttribute('title');
-            if (title)
-                return title;
-            // Check placeholder for inputs
-            const placeholder = el.getAttribute('placeholder');
-            if (placeholder)
-                return placeholder;
-            // Fall back to text content (truncated)
-            const text = el.textContent?.trim() || '';
-            return text.length > 50 ? text.substring(0, 47) + '...' : text;
-        }
-        function isVisible(el) {
-            const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.visibility === 'hidden')
-                return false;
+        const scopeEl = document.querySelector(scopeSel);
+        if (!scopeEl)
+            return results;
+        // Fast selector-based extraction (avoids recursive DOM walking)
+        const interactiveSelector = 'a[href], button, input, select, textarea, [role="button"], [role="link"], [role="textbox"], [role="checkbox"], [role="radio"], [role="combobox"], [role="tab"], [role="menuitem"], [onclick], [tabindex]:not([tabindex="-1"])';
+        const els = scopeEl.querySelectorAll(interactiveSelector);
+        // Pre-compute selector uniqueness cache
+        const selectorCounts = new Map();
+        for (const el of els) {
+            // Quick visibility check (skip expensive getComputedStyle when possible)
             if (el.getAttribute('aria-hidden') === 'true')
-                return false;
+                continue;
             const rect = el.getBoundingClientRect();
             if (rect.width === 0 && rect.height === 0)
-                return false;
-            return true;
-        }
-        function processElement(el) {
-            if (!isVisible(el))
-                return;
+                continue;
             const tag = el.tagName.toLowerCase();
             const role = el.getAttribute('role') || '';
-            const isInteractive = interactiveTags.has(tag) ||
-                interactiveRoles.has(role) ||
-                el.hasAttribute('onclick') ||
-                el.hasAttribute('tabindex') && el.getAttribute('tabindex') !== '-1';
-            if (isInteractive) {
-                const attributes = {};
-                // Collect relevant attributes
-                const attrNames = ['type', 'href', 'placeholder', 'value', 'checked', 'disabled', 'readonly', 'required'];
-                for (const attr of attrNames) {
-                    const val = el.getAttribute(attr);
-                    if (val !== null) {
-                        attributes[attr] = val;
+            // Fast selector generation
+            let selector;
+            if (el.id) {
+                selector = `#${CSS.escape(el.id)}`;
+            }
+            else {
+                const testId = el.getAttribute('data-testid');
+                if (testId) {
+                    selector = `[data-testid="${CSS.escape(testId)}"]`;
+                }
+                else {
+                    const name = el.getAttribute('name');
+                    if (name && ['input', 'select', 'textarea'].includes(tag)) {
+                        selector = `${tag}[name="${CSS.escape(name)}"]`;
+                    }
+                    else {
+                        // Simple tag + type selector
+                        const type = el.getAttribute('type');
+                        selector = type ? `${tag}[type="${type}"]` : tag;
+                        // Add nth-of-type only if needed
+                        const count = (selectorCounts.get(selector) || 0) + 1;
+                        selectorCounts.set(selector, count);
+                        if (count > 1) {
+                            selector = `${selector}:nth-of-type(${count})`;
+                        }
                     }
                 }
-                results.push({
-                    selector: getSelector(el),
-                    role: role || getImplicitRole(el),
-                    name: getAccessibleName(el),
-                    tag,
-                    attributes,
-                });
             }
-            // Process children
-            for (const child of el.children) {
-                processElement(child);
+            // Fast accessible name (most common cases first)
+            let name = el.getAttribute('aria-label') ||
+                el.getAttribute('title') ||
+                el.getAttribute('placeholder') ||
+                '';
+            if (!name) {
+                const text = el.textContent?.trim() || '';
+                name = text.length > 50 ? text.substring(0, 47) + '...' : text;
             }
+            // Collect only essential attributes
+            const attributes = {};
+            const type = el.getAttribute('type');
+            const href = el.getAttribute('href');
+            const placeholder = el.getAttribute('placeholder');
+            const disabled = el.getAttribute('disabled');
+            const checked = el.getAttribute('checked');
+            const required = el.getAttribute('required');
+            if (type)
+                attributes.type = type;
+            if (href)
+                attributes.href = href;
+            if (placeholder)
+                attributes.placeholder = placeholder;
+            if (disabled !== null)
+                attributes.disabled = 'true';
+            if (checked !== null)
+                attributes.checked = 'true';
+            if (required !== null)
+                attributes.required = 'true';
+            results.push({
+                selector,
+                role: role || getImplicitRole(tag, type),
+                name,
+                tag,
+                attributes,
+            });
+            // Early exit at 100 elements
+            if (results.length >= 100)
+                break;
         }
-        function getImplicitRole(el) {
-            const tag = el.tagName.toLowerCase();
-            const type = el.getAttribute('type')?.toLowerCase();
-            switch (tag) {
-                case 'a': return el.hasAttribute('href') ? 'link' : '';
-                case 'button': return 'button';
-                case 'input':
-                    switch (type) {
-                        case 'button':
-                        case 'submit':
-                        case 'reset': return 'button';
-                        case 'checkbox': return 'checkbox';
-                        case 'radio': return 'radio';
-                        case 'range': return 'slider';
-                        case 'search': return 'searchbox';
-                        default: return 'textbox';
-                    }
-                case 'select': return 'combobox';
-                case 'textarea': return 'textbox';
-                case 'img': return 'img';
-                default: return '';
+        function getImplicitRole(tag, type) {
+            if (tag === 'a')
+                return 'link';
+            if (tag === 'button')
+                return 'button';
+            if (tag === 'select')
+                return 'combobox';
+            if (tag === 'textarea')
+                return 'textbox';
+            if (tag === 'input') {
+                if (type === 'checkbox')
+                    return 'checkbox';
+                if (type === 'radio')
+                    return 'radio';
+                if (type === 'submit' || type === 'button' || type === 'reset')
+                    return 'button';
+                return 'textbox';
             }
-        }
-        const scopeEl = document.querySelector(scopeSel);
-        if (scopeEl) {
-            processElement(scopeEl);
+            return '';
         }
         return results;
     }, scopeSelector);

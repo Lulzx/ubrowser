@@ -24,7 +24,7 @@ class BrowserManager {
         // Block unnecessary resources for faster page loads
         await this.state.context.route('**/*', (route) => {
             const resourceType = route.request().resourceType();
-            // Block images, fonts, and media to speed up loading
+            // Block images, fonts, media (keep stylesheets - some sites need them for layout)
             if (['image', 'font', 'media'].includes(resourceType)) {
                 return route.abort();
             }

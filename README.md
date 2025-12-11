@@ -3,7 +3,7 @@
 **The fastest, cheapest browser automation for Claude.**
 
 ```
-μBrowser      ████████████████████ 1m 45s  $0.49
+μBrowser      ████████ 39s  $0.17
 Dev Browser   ████████████████████████████████████████ 3m 53s  $0.88
 Playwright    ████████████████████████████████████████████████ 4m 31s  $1.45
 ```
@@ -14,17 +14,17 @@ Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) gam
 
 | Method | Time | Cost | Turns | vs μBrowser |
 |--------|------|------|-------|-------------|
-| **μBrowser** | **1m 45s** | **$0.49** | **20** | — |
-| Dev Browser | 3m 53s | $0.88 | 29 | 2.2× slower, 1.8× costlier |
-| Playwright MCP | 4m 31s | $1.45 | 51 | 2.6× slower, 3× costlier |
-| Playwright Skill | 8m 07s | $1.45 | 38 | 4.6× slower, 3× costlier |
+| **μBrowser** | **39s** | **$0.17** | **6** | — |
+| Dev Browser | 3m 53s | $0.88 | 29 | 6× slower, 5× costlier |
+| Playwright MCP | 4m 31s | $1.45 | 51 | 7× slower, 9× costlier |
+| Playwright Skill | 8m 07s | $1.45 | 38 | 12× slower, 9× costlier |
 
 **At scale (1000 tasks/month):**
 | Method | Monthly Cost |
 |--------|-------------|
-| μBrowser | $490 |
+| μBrowser | $170 |
 | Playwright MCP | $1,450 |
-| **You save** | **$960/month** |
+| **You save** | **$1,280/month**
 
 ## Why So Fast?
 

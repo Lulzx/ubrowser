@@ -24,7 +24,7 @@ export type NavigateInput = z.infer<typeof navigateSchema>;
 // Execute navigate
 export async function executeNavigate(input: NavigateInput): Promise<ToolResponse> {
   const page = await browserManager.getPage();
-  const timeout = input.timeout ?? 30000;
+  const timeout = input.timeout ?? 10000;
 
   try {
     // Clear refs and snapshot cache on navigation

@@ -44,6 +44,17 @@ async function executeStep(step) {
             return { ok: false, error: `Unknown tool: ${step.tool}` };
     }
 }
+// Helper to take snapshot efficiently
+async function takeSnapshot(page, scope, format) {
+    // Parallel fetch of url/title and elements
+    const [url, title, elements] = await Promise.all([
+        page.url(),
+        page.title(),
+        extractInteractiveElements(page, scope),
+    ]);
+    const refs = filterElements(elements);
+    return formatSnapshot(refs, url, title, format ?? 'compact');
+}
 // Execute batch - returns minified result for token efficiency
 export async function executeBatch(input) {
     const page = await browserManager.getPage();
@@ -58,11 +69,7 @@ export async function executeBatch(input) {
             completed++;
             // Take snapshot after each step if configured
             if (snapshotConfig.when === 'each') {
-                const url = page.url();
-                const title = await page.title();
-                const elements = await extractInteractiveElements(page, snapshotConfig.scope);
-                const refs = filterElements(elements);
-                result.snap = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'compact');
+                result.snap = await takeSnapshot(page, snapshotConfig.scope, snapshotConfig.format);
             }
         }
         else {
@@ -72,11 +79,7 @@ export async function executeBatch(input) {
             result.n = completed;
             // Take snapshot on error if configured
             if (snapshotConfig.when === 'on-error') {
-                const url = page.url();
-                const title = await page.title();
-                const elements = await extractInteractiveElements(page, snapshotConfig.scope);
-                const refs = filterElements(elements);
-                result.snap = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'compact');
+                result.snap = await takeSnapshot(page, snapshotConfig.scope, snapshotConfig.format);
             }
             if (stopOnError)
                 break;
@@ -84,11 +87,7 @@ export async function executeBatch(input) {
     }
     // Take final snapshot if configured
     if (snapshotConfig.when === 'final' && (result.ok || !stopOnError)) {
-        const url = page.url();
-        const title = await page.title();
-        const elements = await extractInteractiveElements(page, snapshotConfig.scope);
-        const refs = filterElements(elements);
-        result.snap = formatSnapshot(refs, url, title, snapshotConfig.format ?? 'compact');
+        result.snap = await takeSnapshot(page, snapshotConfig.scope, snapshotConfig.format);
     }
     return result;
 }

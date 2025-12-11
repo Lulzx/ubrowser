@@ -20,7 +20,7 @@ export const navigateSchema = z.object({
 // Execute navigate
 export async function executeNavigate(input) {
     const page = await browserManager.getPage();
-    const timeout = input.timeout ?? 30000;
+    const timeout = input.timeout ?? 10000;
     try {
         // Clear refs and snapshot cache on navigation
         refManager.clear();
