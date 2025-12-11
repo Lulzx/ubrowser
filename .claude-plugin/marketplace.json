@@ -1,8 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "ubrowser",
+  "name": "lulzx",
   "version": "1.0.0",
-  "description": "μBrowser - Micro browser automation plugin marketplace",
+  "description": "lulzx's Claude Code plugins",
   "owner": {
     "name": "lulzx",
     "url": "https://github.com/lulzx"
@@ -11,7 +11,7 @@
     {
       "name": "ubrowser",
       "source": "../plugins/ubrowser",
-      "description": "μBrowser - Micro browser automation with 98% token reduction through batch execution, minimal responses, and efficient HTML formatting",
+      "description": "The fastest, cheapest browser automation for Claude. 2.2x faster, 70% fewer tokens.",
       "version": "1.0.0",
       "author": {
         "name": "lulzx"
