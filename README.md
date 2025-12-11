@@ -19,18 +19,13 @@ Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) gam
 | Playwright MCP | 4m 31s | $1.45 | 51 | 7× slower, 9× costlier |
 | Playwright Skill | 8m 07s | $1.45 | 38 | 12× slower, 9× costlier |
 
-**At scale (1000 tasks/month):**
-| Method | Monthly Cost |
-|--------|-------------|
-| μBrowser | $170 |
-| Playwright MCP | $1,450 |
-| **You save** | **$1,280/month**
-
-## Why So Fast?
+## How It Works
 
 ### 1. Batch Execution
+
+Combine 25+ browser actions into a single API call:
+
 ```json
-// 4 actions, 1 API call, 1 snapshot
 {"steps": [
   {"tool": "navigate", "args": {"url": "/login"}},
   {"tool": "type", "args": {"selector": "#email", "text": "user@test.com"}},
@@ -38,44 +33,58 @@ Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) gam
   {"tool": "click", "args": {"selector": "button[type=submit]"}}
 ], "snapshot": {"when": "final"}}
 ```
+
 Others make 4 separate calls. We make 1. **75% fewer API calls.**
 
-### 2. Ultra-Compact Format
-```
-# Others (~180 tokens):
+### 2. Ultra-Compact Snapshot Format
+
+Standard HTML (~180 tokens):
+```html
 <button id="e1" role="button">Submit</button>
 <input id="e2" type="email" placeholder="Email" required>
 <input id="e3" type="password" placeholder="Password">
+```
 
-# μBrowser (~50 tokens):
+μBrowser (~50 tokens):
+```
 btn#e1"Submit"
 inp#e2@e~"Email"!r
 inp#e3@p~"Password"
 ```
+
 **70% smaller snapshots.** Output tokens cost 5× more than input.
 
 ### 3. Minimal Responses
-```json
-// Default response
-{"ok":true}
 
-// Only get DOM when you need it
+```json
+{"ok":true}
 {"ok":true,"snap":"btn#e1\"Submit\"\ninp#e2@e~\"Email\""}
 ```
+
+Only return DOM when explicitly requested.
+
+## Implementation Details
+
+**Fast DOM extraction** — Single `querySelectorAll` with compound selector instead of recursive tree walk. Extracts 100+ elements in ~5ms.
+
+**Resource blocking** — Images, fonts, media blocked at network level via Playwright route interception. Stylesheets preserved for layout accuracy.
+
+**Parallel snapshot** — `Promise.all` fetches URL, title, and DOM elements concurrently during batch finalization.
+
+**Playwright auto-wait** — Leverages built-in actionability checks instead of manual waits. 5s timeout vs 30s default.
+
+**Single-op type** — Uses `fill()` for instant text input when no delay/enter needed, bypassing character-by-character simulation.
 
 ## Install
 
 ### Claude Code Plugin (Recommended)
 
 ```bash
-# Add the marketplace
 /plugin marketplace add lulzx/claude-code
-
-# Install ubrowser
 /plugin install ubrowser@claude-code
 ```
 
-That's it! Restart Claude Code and the ubrowser MCP tools are ready to use.
+Restart Claude Code and the ubrowser MCP tools are ready.
 
 ### Manual Installation
 
@@ -101,58 +110,54 @@ claude mcp add ubrowser -- node "$PWD/build/index.js"
 
 ## Format Reference
 
-**Element notation:**
 ```
 tag#ref@type~"placeholder"/href"content"!flags
 
-btn#e1"Submit"           → <button id="e1">Submit</button>
-inp#e2@e~"Email"!r       → <input id="e2" type="email" placeholder="Email" required>
-a#e3/login"Sign in"      → <a id="e3" href="/login">Sign in</a>
-sel#e4"Country"          → <select id="e4">Country</select>
+btn#e1"Submit"           → <button>Submit</button>
+inp#e2@e~"Email"!r       → <input type="email" placeholder="Email" required>
+a#e3/login"Sign in"      → <a href="/login">Sign in</a>
+sel#e4"Country"          → <select>Country</select>
 ```
 
-**Type abbreviations:** `@e`=email `@p`=password `@t`=text `@n`=number `@c`=checkbox `@r`=radio
+**Types:** `@e`=email `@p`=password `@t`=text `@n`=number `@c`=checkbox `@r`=radio
 
 **Flags:** `!d`=disabled `!c`=checked `!r`=required
-
-## Feature Comparison
-
-| Feature | Playwright MCP | Dev Browser | μBrowser |
-|---------|:-------------:|:-----------:|:--------:|
-| Basic actions | ✓ | ✓ | ✓ |
-| Element refs | ✗ | ✓ | ✓ |
-| Multi-tab | ✗ | ✓ | ✓ |
-| **Batch execution** | ✗ | ✗ | **✓** |
-| **Minimal responses** | ✗ | ✗ | **✓** |
-| **Ultra-compact format** | ✗ | ✗ | **✓** |
-| **Scoped snapshots** | ✗ | partial | **✓** |
-| **Diff updates** | ✗ | ✗ | **✓** |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Claude                           │
-└─────────────────────┬───────────────────────────────┘
-                      │ 1 batch call
-                      ▼
-┌─────────────────────────────────────────────────────┐
-│                   μBrowser                          │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
-│  │ navigate│→ │  type   │→ │  click  │→ ...       │
-│  └─────────┘  └─────────┘  └─────────┘            │
-│                      │                              │
-│              ┌───────▼───────┐                     │
-│              │ Ultra-compact │                     │
-│              │   snapshot    │                     │
-│              └───────────────┘                     │
-└─────────────────────┬───────────────────────────────┘
-                      │ 1 response
-                      ▼
-┌─────────────────────────────────────────────────────┐
-│                    Claude                           │
-│         (continues with minimal context)            │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                         Claude                               │
+└─────────────────────────────┬───────────────────────────────┘
+                              │ 1 batch call (25+ steps)
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        μBrowser                              │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Batch Executor (sequential)              │   │
+│  │  navigate → type → type → click → navigate → ...     │   │
+│  └──────────────────────────┬───────────────────────────┘   │
+│                             │                                │
+│  ┌──────────────────────────▼───────────────────────────┐   │
+│  │            Snapshot Engine (parallel)                 │   │
+│  │  ┌─────────┐  ┌─────────┐  ┌──────────────────────┐  │   │
+│  │  │ URL     │  │ Title   │  │ querySelectorAll     │  │   │
+│  │  │ fetch   │  │ fetch   │  │ (compound selector)  │  │   │
+│  │  └────┬────┘  └────┬────┘  └──────────┬───────────┘  │   │
+│  │       └────────────┼──────────────────┘              │   │
+│  │                    ▼                                  │   │
+│  │           Ultra-compact formatter                     │   │
+│  │           btn#e1"Submit"\ninp#e2@e~"Email"           │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+└─────────────────────────────┬───────────────────────────────┘
+                              │ 1 response (~50 tokens)
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         Claude                               │
+│              (continues with minimal context)                │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## License
