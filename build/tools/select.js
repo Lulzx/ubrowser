@@ -4,6 +4,7 @@ import { refManager } from '../refs/manager.js';
 import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
+import { cleanError } from '../types.js';
 // Schema for select tool
 export const selectSchema = z.object({
     ref: z.string().optional().describe('Element ref (e.g., "e1") from a previous snapshot'),
@@ -28,7 +29,25 @@ export async function executeSelect(input) {
     const timeout = input.timeout ?? 30000;
     try {
         // Get locator from ref or selector
-        const locator = await refManager.getLocator(page, input.ref || input.selector);
+        const locator = await refManager.getLocator(page, input.ref || input.selector, { strict: false });
+        // Wait for element to be visible before selecting
+        const visibilityTimeout = Math.min(timeout, 10000);
+        try {
+            await locator.waitFor({ state: 'visible', timeout: visibilityTimeout });
+        }
+        catch {
+            // Check if element exists at all
+            const count = await locator.count();
+            if (count === 0) {
+                const selector = input.ref || input.selector;
+                return {
+                    ok: false,
+                    error: `Select element not found: "${selector}". Take a snapshot to see available elements.`,
+                };
+            }
+            // Element exists but not visible - try scrolling into view
+            await locator.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => { });
+        }
         // Select the option
         if (input.value) {
             await locator.selectOption({ value: input.value }, { timeout });
@@ -54,7 +73,7 @@ export async function executeSelect(input) {
     catch (error) {
         return {
             ok: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: cleanError(error),
         };
     }
 }

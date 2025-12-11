@@ -3,7 +3,7 @@ import { browserManager } from '../browser/manager.js';
 import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
-import type { ToolResponse } from '../types.js';
+import { cleanError, type ToolResponse } from '../types.js';
 
 // Schema for snapshot tool
 export const snapshotSchema = z.object({
@@ -43,7 +43,7 @@ export async function executeSnapshot(input: SnapshotInput): Promise<ToolRespons
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: cleanError(error),
     };
   }
 }

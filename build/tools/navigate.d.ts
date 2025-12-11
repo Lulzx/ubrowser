@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ToolResponse } from '../types.js';
+import { type ToolResponse } from '../types.js';
 export declare const navigateSchema: z.ZodObject<{
     url: z.ZodString;
     waitUntil: z.ZodOptional<z.ZodEnum<["load", "domcontentloaded", "networkidle"]>>;

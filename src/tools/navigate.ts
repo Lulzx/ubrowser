@@ -4,7 +4,7 @@ import { refManager } from '../refs/manager.js';
 import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
-import type { ToolResponse, SnapshotOptions } from '../types.js';
+import { cleanError, type ToolResponse, type SnapshotOptions } from '../types.js';
 
 // Schema for navigate tool
 export const navigateSchema = z.object({
@@ -63,7 +63,7 @@ export async function executeNavigate(input: NavigateInput): Promise<ToolRespons
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: cleanError(error),
     };
   }
 }

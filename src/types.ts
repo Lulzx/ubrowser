@@ -128,3 +128,14 @@ export const INTERACTIVE_TAGS = new Set([
   'details',
   'summary',
 ]);
+
+// Helper to clean Playwright's verbose error messages
+export function cleanError(error: unknown): string {
+  const errorMsg = error instanceof Error ? error.message : String(error);
+  // Remove verbose call log and locator prefix
+  return errorMsg
+    .replace(/Call log:[\s\S]*$/, '')
+    .replace(/locator\.[^:]+: /, '')
+    .replace(/Timeout \d+ms exceeded\.?\s*/, 'Timeout: ')
+    .trim() || errorMsg;
+}

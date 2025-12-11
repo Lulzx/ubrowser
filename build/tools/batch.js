@@ -8,6 +8,7 @@ import { executeClick } from './click.js';
 import { executeType } from './type.js';
 import { executeSelect } from './select.js';
 import { executeScroll } from './scroll.js';
+import { cleanError } from '../types.js';
 // Schema for batch tool
 export const batchSchema = z.object({
     steps: z.array(z.object({
@@ -66,7 +67,7 @@ export async function executeBatch(input) {
         }
         else {
             result.ok = false;
-            result.err = stepResult.error;
+            result.err = stepResult.error ? cleanError(stepResult.error) : 'Unknown error';
             result.at = i;
             result.n = completed;
             // Take snapshot on error if configured

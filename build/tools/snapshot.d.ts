@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ToolResponse } from '../types.js';
+import { type ToolResponse } from '../types.js';
 export declare const snapshotSchema: z.ZodObject<{
     scope: z.ZodOptional<z.ZodString>;
     format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;

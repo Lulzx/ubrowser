@@ -4,7 +4,7 @@ import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { refManager } from '../refs/manager.js';
-import type { ToolResponse } from '../types.js';
+import { cleanError, type ToolResponse } from '../types.js';
 
 // Schema for page management tool
 export const pagesSchema = z.object({
@@ -123,7 +123,7 @@ export async function executePages(input: PagesInput): Promise<PagesResult> {
     return {
       ok: false,
       action: input.action,
-      error: error instanceof Error ? error.message : String(error),
+      error: cleanError(error),
     };
   }
 }

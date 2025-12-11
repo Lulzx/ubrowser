@@ -51,7 +51,7 @@ class RefManager {
   }
 
   // Get a Playwright locator for a ref
-  async getLocator(page: Page, refOrSelector: string): Promise<Locator> {
+  async getLocator(page: Page, refOrSelector: string, options?: { strict?: boolean }): Promise<Locator> {
     // Check if it's a ref ID (starts with 'e' followed by numbers)
     if (/^e\d+$/.test(refOrSelector)) {
       const ref = this.resolve(refOrSelector);
@@ -61,8 +61,27 @@ class RefManager {
       return page.locator(ref.selector);
     }
 
+    // Handle text-based selectors with fallback strategies
+    // Convert :has-text() to getByRole/getByText for better reliability
+    const hasTextMatch = refOrSelector.match(/^(.+):has-text\(['"](.+)['"]\)$/);
+    if (hasTextMatch) {
+      const [, baseSelector, text] = hasTextMatch;
+      // Try exact match first, then case-insensitive
+      const locator = page.locator(baseSelector).filter({ hasText: new RegExp(text, 'i') });
+      return locator.first();
+    }
+
+    // For role-based selectors with text, use getByRole for better reliability
+    const roleTextMatch = refOrSelector.match(/^\[role=['"](\w+)['"]\]:has-text\(['"](.+)['"]\)$/);
+    if (roleTextMatch) {
+      const [, role, text] = roleTextMatch;
+      return page.getByRole(role as any, { name: new RegExp(text, 'i') }).first();
+    }
+
     // Otherwise treat it as a selector
-    return page.locator(refOrSelector);
+    const locator = page.locator(refOrSelector);
+    // Return first match to avoid strict mode issues with multiple matches
+    return options?.strict === false ? locator.first() : locator;
   }
 
   // Get all current refs

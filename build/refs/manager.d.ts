@@ -6,7 +6,9 @@ declare class RefManager {
     private counter;
     getOrCreate(selector: string, role: string, name: string, tag: string, attributes?: Record<string, string>): string;
     resolve(id: string): ElementRef | null;
-    getLocator(page: Page, refOrSelector: string): Promise<Locator>;
+    getLocator(page: Page, refOrSelector: string, options?: {
+        strict?: boolean;
+    }): Promise<Locator>;
     getAll(): ElementRef[];
     clear(): void;
     remove(ids: string[]): void;

@@ -4,6 +4,7 @@ import { refManager } from '../refs/manager.js';
 import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
+import { cleanError } from '../types.js';
 // Schema for scroll tool
 export const scrollSchema = z.object({
     ref: z.string().optional().describe('Element ref to scroll into view'),
@@ -22,11 +23,21 @@ export const scrollSchema = z.object({
 // Execute scroll
 export async function executeScroll(input) {
     const page = await browserManager.getPage();
+    const timeout = input.timeout ?? 30000;
     try {
         if (input.ref || input.selector) {
             // Scroll element into view
-            const locator = await refManager.getLocator(page, input.ref || input.selector);
-            await locator.scrollIntoViewIfNeeded({ timeout: input.timeout ?? 30000 });
+            const locator = await refManager.getLocator(page, input.ref || input.selector, { strict: false });
+            // Check if element exists first
+            const count = await locator.count();
+            if (count === 0) {
+                const selector = input.ref || input.selector;
+                return {
+                    ok: false,
+                    error: `Element not found: "${selector}". Take a snapshot to see available elements.`,
+                };
+            }
+            await locator.scrollIntoViewIfNeeded({ timeout });
         }
         else if (input.toTop) {
             // Scroll to top
@@ -62,7 +73,7 @@ export async function executeScroll(input) {
     catch (error) {
         return {
             ok: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: cleanError(error),
         };
     }
 }

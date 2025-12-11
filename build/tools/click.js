@@ -4,6 +4,7 @@ import { refManager } from '../refs/manager.js';
 import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
+import { cleanError } from '../types.js';
 // Schema for click tool
 export const clickSchema = z.object({
     ref: z.string().optional().describe('Element ref (e.g., "e1") from a previous snapshot'),
@@ -25,7 +26,26 @@ export async function executeClick(input) {
     const timeout = input.timeout ?? 30000;
     try {
         // Get locator from ref or selector
-        const locator = await refManager.getLocator(page, input.ref || input.selector);
+        const locator = await refManager.getLocator(page, input.ref || input.selector, { strict: false });
+        // Wait for element to be visible before clicking (with shorter timeout for visibility check)
+        const visibilityTimeout = Math.min(timeout, 10000);
+        try {
+            await locator.waitFor({ state: 'visible', timeout: visibilityTimeout });
+        }
+        catch {
+            // If not visible, check if it exists at all
+            const count = await locator.count();
+            if (count === 0) {
+                // Try to provide helpful error with available elements
+                const selector = input.ref || input.selector;
+                return {
+                    ok: false,
+                    error: `Element not found: "${selector}". Take a snapshot to see available elements.`,
+                };
+            }
+            // Element exists but not visible - try scrolling into view
+            await locator.scrollIntoViewIfNeeded({ timeout: 5000 }).catch(() => { });
+        }
         // Click the element
         await locator.click({
             button: input.button ?? 'left',
@@ -47,7 +67,7 @@ export async function executeClick(input) {
     catch (error) {
         return {
             ok: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: cleanError(error),
         };
     }
 }

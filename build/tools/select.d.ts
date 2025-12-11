@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ToolResponse } from '../types.js';
+import { type ToolResponse } from '../types.js';
 export declare const selectSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     ref: z.ZodOptional<z.ZodString>;
     selector: z.ZodOptional<z.ZodString>;

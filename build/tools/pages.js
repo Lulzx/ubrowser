@@ -4,6 +4,7 @@ import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { refManager } from '../refs/manager.js';
+import { cleanError } from '../types.js';
 // Schema for page management tool
 export const pagesSchema = z.object({
     action: z.enum(['list', 'create', 'switch', 'close']).describe('Action to perform'),
@@ -97,7 +98,7 @@ export async function executePages(input) {
         return {
             ok: false,
             action: input.action,
-            error: error instanceof Error ? error.message : String(error),
+            error: cleanError(error),
         };
     }
 }

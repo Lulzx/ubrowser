@@ -57,4 +57,5 @@ export interface BrowserState {
 export declare const INTERACTIVE_ROLES: Set<string>;
 export declare const NON_INTERACTIVE_ROLES: Set<string>;
 export declare const INTERACTIVE_TAGS: Set<string>;
+export declare function cleanError(error: unknown): string;
 //# sourceMappingURL=types.d.ts.map

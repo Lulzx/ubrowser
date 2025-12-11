@@ -3,6 +3,7 @@ import { browserManager } from '../browser/manager.js';
 import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
+import { cleanError } from '../types.js';
 // Schema for inspect tool
 export const inspectSchema = z.object({
     selector: z.string().describe('CSS selector of element to inspect'),
@@ -68,7 +69,7 @@ export async function executeInspect(input) {
         return {
             ok: false,
             exists: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: cleanError(error),
         };
     }
 }
