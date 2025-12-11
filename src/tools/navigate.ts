@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { browserManager } from '../browser/manager.js';
 import { refManager } from '../refs/manager.js';
-import { extractInteractiveElements } from '../snapshot/extractor.js';
+import { extractInteractiveElements, clearFastExtractorCache } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse, type SnapshotOptions } from '../types.js';
@@ -27,9 +27,10 @@ export async function executeNavigate(input: NavigateInput): Promise<ToolRespons
   const timeout = input.timeout ?? 10000;
 
   try {
-    // Clear refs and snapshot cache on navigation
+    // Clear refs and all caches on navigation
     refManager.clear();
     clearSnapshotCache();
+    clearFastExtractorCache(page);
 
     // Navigate
     await page.goto(input.url, {

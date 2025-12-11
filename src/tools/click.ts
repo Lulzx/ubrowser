@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { browserManager } from '../browser/manager.js';
 import { refManager } from '../refs/manager.js';
-import { extractInteractiveElements } from '../snapshot/extractor.js';
+import { extractInteractiveElementsFast, getElementPosition } from '../snapshot/fast-extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
+import { fastClick } from '../browser/fast-actions.js';
 import { cleanError, type ToolResponse } from '../types.js';
+import { getLastSnapshotElements } from './snapshot.js';
 
 // Schema for click tool
 export const clickSchema = z.object({
@@ -24,37 +26,52 @@ export const clickSchema = z.object({
 
 export type ClickInput = z.infer<typeof clickSchema>;
 
-// Execute click
+// Execute click - uses fast CDP path when element position is known
 export async function executeClick(input: ClickInput): Promise<ToolResponse> {
   const page = await browserManager.getPage();
   const timeout = input.timeout ?? 5000;
 
   try {
-    // Get locator from ref or selector
-    const locator = await refManager.getLocator(page, input.ref || input.selector!, { strict: false });
+    const button = input.button ?? 'left';
+    const clickCount = input.clickCount ?? 1;
 
-    // Click directly - Playwright has built-in auto-waiting for actionability
-    await locator.click({
-      button: input.button ?? 'left',
-      clickCount: input.clickCount ?? 1,
-      timeout,
-    });
+    // Try fast click if we have a ref and cached positions from snapshot
+    const cachedElements = getLastSnapshotElements();
+    if (input.ref && cachedElements.length > 0) {
+      const pos = getElementPosition(cachedElements, input.ref);
+      if (pos) {
+        await fastClick(page, pos.x, pos.y, { button, clickCount });
+        // Build response
+        const response: ToolResponse = { ok: true };
+        if (input.snapshot?.include) {
+          const [url, title, elements] = await Promise.all([
+            Promise.resolve(page.url()),
+            page.title(),
+            extractInteractiveElementsFast(page, input.snapshot.scope),
+          ]);
+          const refs = filterElements(elements);
+          response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
+        }
+        return response;
+      }
+    }
+
+    // Fallback to Playwright for reliability
+    const locator = await refManager.getLocator(page, input.ref || input.selector!, { strict: false });
+    await locator.click({ button, clickCount, timeout });
 
     // Build response
     const response: ToolResponse = { ok: true };
 
     // Include snapshot if requested
     if (input.snapshot?.include) {
-      const url = page.url();
-      const title = await page.title();
-      const elements = await extractInteractiveElements(page, input.snapshot.scope);
+      const [url, title, elements] = await Promise.all([
+        Promise.resolve(page.url()),
+        page.title(),
+        extractInteractiveElementsFast(page, input.snapshot.scope),
+      ]);
       const refs = filterElements(elements);
-      response.snapshot = formatSnapshot(
-        refs,
-        url,
-        title,
-        input.snapshot.format ?? 'compact'
-      );
+      response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
     }
 
     return response;

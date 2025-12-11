@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { browserManager } from '../browser/manager.js';
 import { refManager } from '../refs/manager.js';
-import { extractInteractiveElements } from '../snapshot/extractor.js';
+import { extractInteractiveElementsFast, getElementPosition } from '../snapshot/fast-extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
+import { fastType, fastKeyPress, fastFocus } from '../browser/fast-actions.js';
 import { cleanError, type ToolResponse } from '../types.js';
+import { getLastSnapshotElements } from './snapshot.js';
 
 // Schema for type tool
 export const typeSchema = z.object({
@@ -26,13 +28,42 @@ export const typeSchema = z.object({
 
 export type TypeInput = z.infer<typeof typeSchema>;
 
-// Execute type
+// Execute type - uses fast CDP path when element position is known
 export async function executeType(input: TypeInput): Promise<ToolResponse> {
   const page = await browserManager.getPage();
   const timeout = input.timeout ?? 5000;
 
   try {
-    // Get locator from ref or selector
+    // Try fast type if we have a ref, cached positions from snapshot, and no delay
+    const cachedElements = getLastSnapshotElements();
+    if (input.ref && cachedElements.length > 0 && !input.delay) {
+      const pos = getElementPosition(cachedElements, input.ref);
+      if (pos) {
+        // Focus the element first via fast click
+        await fastFocus(page, pos.x, pos.y);
+        // Type using CDP (instant)
+        await fastType(page, input.text, { clear: input.clear !== false });
+        // Press Enter if requested
+        if (input.pressEnter) {
+          await fastKeyPress(page, 'Enter');
+        }
+
+        // Build response
+        const response: ToolResponse = { ok: true };
+        if (input.snapshot?.include) {
+          const [url, title, elements] = await Promise.all([
+            Promise.resolve(page.url()),
+            page.title(),
+            extractInteractiveElementsFast(page, input.snapshot.scope),
+          ]);
+          const refs = filterElements(elements);
+          response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
+        }
+        return response;
+      }
+    }
+
+    // Fallback to Playwright for reliability
     const locator = await refManager.getLocator(page, input.ref || input.selector!, { strict: false });
 
     // Clear and fill in one operation when possible (most common case)
@@ -61,16 +92,13 @@ export async function executeType(input: TypeInput): Promise<ToolResponse> {
 
     // Include snapshot if requested
     if (input.snapshot?.include) {
-      const url = page.url();
-      const title = await page.title();
-      const elements = await extractInteractiveElements(page, input.snapshot.scope);
+      const [url, title, elements] = await Promise.all([
+        Promise.resolve(page.url()),
+        page.title(),
+        extractInteractiveElementsFast(page, input.snapshot.scope),
+      ]);
       const refs = filterElements(elements);
-      response.snapshot = formatSnapshot(
-        refs,
-        url,
-        title,
-        input.snapshot.format ?? 'compact'
-      );
+      response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
     }
 
     return response;

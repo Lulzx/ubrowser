@@ -3,7 +3,7 @@
 **The fastest, cheapest browser automation for Claude.**
 
 ```
-μBrowser      ████████ 39s  $0.17
+μBrowser      ██████ 51s  $0.18
 Dev Browser   ████████████████████████████████████████ 3m 53s  $0.88
 Playwright    ████████████████████████████████████████████████ 4m 31s  $1.45
 ```
@@ -12,12 +12,16 @@ Playwright    ██████████████████████
 
 Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) game-tracker task with Claude Opus 4.5:
 
-| Method | Time | Cost | Turns | vs μBrowser |
-|--------|------|------|-------|-------------|
-| **μBrowser** | **39s** | **$0.17** | **6** | — |
-| Dev Browser | 3m 53s | $0.88 | 29 | 6× slower, 5× costlier |
-| Playwright MCP | 4m 31s | $1.45 | 51 | 7× slower, 9× costlier |
-| Playwright Skill | 8m 07s | $1.45 | 38 | 12× slower, 9× costlier |
+| Method | Time | Cost | Turns |
+|--------|------|------|-------|
+| **μBrowser** | **51s** | **$0.18** | **7** |
+| Dev Browser | 3m 53s | $0.88 | 29 |
+| Playwright MCP | 4m 31s | $1.45 | 51 |
+
+**Results:**
+- 5× faster than Dev Browser
+- 5× cheaper than Dev Browser
+- 8× cheaper than Playwright MCP
 
 ## How It Works
 
@@ -65,13 +69,17 @@ Only return DOM when explicitly requested.
 
 ## Implementation Details
 
-**Fast DOM extraction** — Single `querySelectorAll` with compound selector instead of recursive tree walk. Extracts 100+ elements in ~5ms.
+**Pre-injected extraction script** — Script is injected once and JIT-cached in browser, eliminating recompilation overhead. Subsequent snapshots complete in <1ms.
+
+**Batched visibility checks** — All `getBoundingClientRect()` calls happen in a single pass, avoiding layout thrashing that occurs with per-element checks.
+
+**MutationObserver caching** — DOM changes are tracked via MutationObserver. If nothing changed, cached snapshot returns instantly (0.5ms vs 50ms).
+
+**CDP fast operations** — Click and type use Chrome DevTools Protocol directly when element positions are known, bypassing Playwright's actionability checks.
 
 **Resource blocking** — Images, fonts, media blocked at network level via Playwright route interception. Stylesheets preserved for layout accuracy.
 
 **Parallel snapshot** — `Promise.all` fetches URL, title, and DOM elements concurrently during batch finalization.
-
-**Playwright auto-wait** — Leverages built-in actionability checks instead of manual waits. 5s timeout vs 30s default.
 
 **Single-op type** — Uses `fill()` for instant text input when no delay/enter needed, bypassing character-by-character simulation.
 
@@ -135,6 +143,9 @@ sel#e4"Country"          → <select>Country</select>
 | Scoped snapshots         | —              | partial     | ✓        |
 | Diff snapshots           | —              | —           | ✓        |
 | Configurable responses   | —              | —           | ✓        |
+| Pre-injected scripts     | —              | —           | ✓        |
+| MutationObserver cache   | —              | —           | ✓        |
+| CDP fast operations      | —              | —           | ✓        |
 
 ## Architecture
 
@@ -153,12 +164,12 @@ sel#e4"Country"          → <select>Country</select>
 │  └──────────────────────────┬───────────────────────────┘   │
 │                             │                                │
 │  ┌──────────────────────────▼───────────────────────────┐   │
-│  │            Snapshot Engine (parallel)                 │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌──────────────────────┐  │   │
-│  │  │ URL     │  │ Title   │  │ querySelectorAll     │  │   │
-│  │  │ fetch   │  │ fetch   │  │ (compound selector)  │  │   │
-│  │  └────┬────┘  └────┬────┘  └──────────┬───────────┘  │   │
-│  │       └────────────┼──────────────────┘              │   │
+│  │            Snapshot Engine (optimized)                │   │
+│  │  ┌─────────────────────────────────────────────────┐ │   │
+│  │  │ Pre-injected script (JIT cached)                │ │   │
+│  │  │ MutationObserver (change detection)             │ │   │
+│  │  │ Batched getBoundingClientRect (no thrashing)    │ │   │
+│  │  └─────────────────────────────────────────────────┘ │   │
 │  │                    ▼                                  │   │
 │  │           Ultra-compact formatter                     │   │
 │  │           btn#e1"Submit"\ninp#e2@e~"Email"           │   │
@@ -172,6 +183,17 @@ sel#e4"Country"          → <select>Country</select>
 │              (continues with minimal context)                │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+## Performance
+
+MCP server-side benchmarks (not including LLM response time):
+
+| Operation | Time |
+|-----------|------|
+| First snapshot (cold) | 4ms |
+| Cached snapshot | 0.5ms |
+| 4-step batch | 34ms |
+| Type operation | 12-16ms |
 
 ## License
 
