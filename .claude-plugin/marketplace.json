@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "ubrowser",
-      "source": "..",
+      "source": "./",
       "description": "μBrowser - Micro browser automation with 98% token reduction through batch execution, minimal responses, and efficient HTML formatting",
       "version": "1.0.0",
       "author": {
