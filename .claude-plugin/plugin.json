@@ -1,0 +1,24 @@
+{
+  "name": "ubrowser",
+  "version": "1.0.0",
+  "description": "μBrowser - Micro browser automation with 98% token reduction through batch execution, minimal responses, and efficient HTML formatting",
+  "author": {
+    "name": "lulzx",
+    "url": "https://github.com/lulzx"
+  },
+  "repository": "https://github.com/lulzx/ubrowser",
+  "homepage": "https://github.com/lulzx/ubrowser",
+  "license": "MIT",
+  "keywords": [
+    "browser",
+    "automation",
+    "playwright",
+    "mcp",
+    "web",
+    "scraping",
+    "testing",
+    "token-efficient",
+    "micro"
+  ],
+  "mcpServers": "../.mcp.json"
+}

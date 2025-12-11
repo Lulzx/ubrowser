@@ -1,0 +1,38 @@
+{
+  "name": "ubrowser",
+  "version": "1.0.0",
+  "description": "μBrowser - Micro browser automation with 98% token reduction",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "ubrowser": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "browser",
+    "automation",
+    "playwright",
+    "claude",
+    "micro",
+    "token-efficient"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "playwright": "^1.49.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "build"
+  ]
+}

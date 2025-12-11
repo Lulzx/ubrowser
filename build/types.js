@@ -1,0 +1,57 @@
+// Interactive element roles to keep during pruning
+export const INTERACTIVE_ROLES = new Set([
+    'button',
+    'link',
+    'textbox',
+    'combobox',
+    'listbox',
+    'option',
+    'checkbox',
+    'radio',
+    'switch',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'tab',
+    'tabpanel',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'menu',
+    'menubar',
+    'treeitem',
+    'gridcell',
+    'row',
+    'cell',
+]);
+// Non-interactive roles to filter out
+export const NON_INTERACTIVE_ROLES = new Set([
+    'presentation',
+    'none',
+    'generic',
+    'group',
+    'region',
+    'article',
+    'banner',
+    'complementary',
+    'contentinfo',
+    'figure',
+    'img',
+    'list',
+    'listitem',
+    'main',
+    'navigation',
+    'separator',
+    'toolbar',
+]);
+// HTML tags that are typically interactive
+export const INTERACTIVE_TAGS = new Set([
+    'a',
+    'button',
+    'input',
+    'select',
+    'textarea',
+    'details',
+    'summary',
+]);
+//# sourceMappingURL=types.js.map
