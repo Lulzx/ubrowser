@@ -1,34 +1,77 @@
 # μBrowser
 
-Ultra-fast browser automation for Claude. **55% faster**, **66% cheaper** than alternatives.
+**The fastest, cheapest browser automation for Claude.**
+
+```
+μBrowser      ████████████████████ 1m 45s  $0.49
+Dev Browser   ████████████████████████████████████████ 3m 53s  $0.88
+Playwright    ████████████████████████████████████████████████ 4m 31s  $1.45
+```
 
 ## Benchmarks
 
-Real-world results on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) game-tracker task (Claude Opus 4.5):
+Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) game-tracker task with Claude Opus 4.5:
 
-| Method | Time | Cost | Turns | Savings |
-|--------|------|------|-------|---------|
+| Method | Time | Cost | Turns | vs μBrowser |
+|--------|------|------|-------|-------------|
 | **μBrowser** | **1m 45s** | **$0.49** | **20** | — |
-| Dev Browser | 3m 53s | $0.88 | 29 | 55% slower, 45% more |
-| Playwright MCP | 4m 31s | $1.45 | 51 | 61% slower, 66% more |
-| Playwright Skill | 8m 07s | $1.45 | 38 | 78% slower, 66% more |
+| Dev Browser | 3m 53s | $0.88 | 29 | 2.2× slower, 1.8× costlier |
+| Playwright MCP | 4m 31s | $1.45 | 51 | 2.6× slower, 3× costlier |
+| Playwright Skill | 8m 07s | $1.45 | 38 | 4.6× slower, 3× costlier |
 
-### Why So Fast?
+**At scale (1000 tasks/month):**
+| Method | Monthly Cost |
+|--------|-------------|
+| μBrowser | $490 |
+| Playwright MCP | $1,450 |
+| **You save** | **$960/month** |
 
-1. **Batch execution** — Multi-step flows in one call (4 tools → 1)
-2. **Ultra-compact format** — `btn#e1"Submit"` instead of verbose JSON
-3. **No intermediate snapshots** — Only return DOM when needed
-4. **Output tokens cost 5×** — Reducing output has outsized cost impact
+## Why So Fast?
+
+### 1. Batch Execution
+```json
+// 4 actions, 1 API call, 1 snapshot
+{"steps": [
+  {"tool": "navigate", "args": {"url": "/login"}},
+  {"tool": "type", "args": {"selector": "#email", "text": "user@test.com"}},
+  {"tool": "type", "args": {"selector": "#pass", "text": "secret"}},
+  {"tool": "click", "args": {"selector": "button[type=submit]"}}
+], "snapshot": {"when": "final"}}
+```
+Others make 4 separate calls. We make 1. **75% fewer API calls.**
+
+### 2. Ultra-Compact Format
+```
+# Others (~180 tokens):
+<button id="e1" role="button">Submit</button>
+<input id="e2" type="email" placeholder="Email" required>
+<input id="e3" type="password" placeholder="Password">
+
+# μBrowser (~50 tokens):
+btn#e1"Submit"
+inp#e2@e~"Email"!r
+inp#e3@p~"Password"
+```
+**70% smaller snapshots.** Output tokens cost 5× more than input.
+
+### 3. Minimal Responses
+```json
+// Default response
+{"ok":true}
+
+// Only get DOM when you need it
+{"ok":true,"snap":"btn#e1\"Submit\"\ninp#e2@e~\"Email\""}
+```
 
 ## Install
 
+**Claude Code Plugin (Recommended):**
 ```bash
-# Claude Code plugin
 /plugin marketplace add lulzx/ubrowser
 /plugin install ubrowser@lulzx/ubrowser
 ```
 
-Or manual:
+**Manual:**
 ```bash
 git clone https://github.com/lulzx/ubrowser && cd ubrowser
 npm install && npx playwright install chromium && npm run build
@@ -41,98 +84,73 @@ Add to `~/.claude/claude_desktop_config.json`:
 
 ## Tools
 
-### `browser_batch` — The Key Optimization
-```json
-{"steps": [
-  {"tool": "navigate", "args": {"url": "/login"}},
-  {"tool": "type", "args": {"selector": "#email", "text": "test@test.com"}},
-  {"tool": "type", "args": {"selector": "#password", "text": "secret"}},
-  {"tool": "click", "args": {"selector": "button[type=submit]"}}
-], "snapshot": {"when": "final"}}
-```
-4 actions, 1 call, 1 snapshot → **80%+ token reduction**
+| Tool | Purpose |
+|------|---------|
+| `browser_batch` | Execute multiple actions in one call |
+| `browser_navigate` | Go to URL |
+| `browser_click` | Click element by ref or selector |
+| `browser_type` | Type into input field |
+| `browser_select` | Select dropdown option |
+| `browser_scroll` | Scroll page or element |
+| `browser_snapshot` | Get interactive elements |
+| `browser_pages` | Manage multiple tabs |
+| `browser_inspect` | Deep inspect specific element |
 
-### `browser_navigate`
-```json
-{"url": "https://example.com", "snapshot": {"include": true}}
-```
+## Format Reference
 
-### `browser_click` / `browser_type` / `browser_select`
-```json
-{"ref": "e1"}
-{"ref": "e2", "text": "hello@example.com"}
-{"selector": "#country", "label": "United States"}
+**Element notation:**
 ```
+tag#ref@type~"placeholder"/href"content"!flags
 
-### `browser_scroll`
-```json
-{"direction": "down", "amount": 500}
-{"toBottom": true}
+btn#e1"Submit"           → <button id="e1">Submit</button>
+inp#e2@e~"Email"!r       → <input id="e2" type="email" placeholder="Email" required>
+a#e3/login"Sign in"      → <a id="e3" href="/login">Sign in</a>
+sel#e4"Country"          → <select id="e4">Country</select>
 ```
 
-### `browser_snapshot`
-```json
-{"scope": "#main", "format": "compact"}
-```
+**Type abbreviations:** `@e`=email `@p`=password `@t`=text `@n`=number `@c`=checkbox `@r`=radio
 
-Returns ultra-compact format:
-```
-[Login](example.com/login)
-inp#e1@e~"Email"
-inp#e2@p~"Password"
-btn#e3"Sign In"
-a#e4/forgot"Forgot password?"
-```
-
-### `browser_pages` — Multi-Page Workflows
-```json
-{"action": "create", "name": "tab1"}
-{"action": "switch", "name": "tab1"}
-{"action": "list"}
-{"action": "close", "name": "tab1"}
-```
-
-## Output Format
-
-Default (minimal):
-```json
-{"ok":true}
-```
-
-With snapshot:
-```json
-{"ok":true,"snap":"btn#e1\"Submit\"\ninp#e2@e~\"Email\""}
-```
-
-Batch error:
-```json
-{"ok":false,"err":"Element not found","at":2,"n":2}
-```
-
-## Key Optimizations
-
-| Technique | Savings |
-|-----------|---------|
-| Batch execution | 60-70% |
-| Ultra-compact format | 70%+ vs HTML |
-| Interactive-only filter | 80-90% of DOM |
-| Scoped snapshots | 60-80% |
-| Diff-based updates | 70-90% |
+**Flags:** `!d`=disabled `!c`=checked `!r`=required
 
 ## Feature Comparison
 
 | Feature | Playwright MCP | Dev Browser | μBrowser |
-|---------|---------------|-------------|----------|
-| Navigate | Yes | Yes | Yes |
-| Click/Type/Select | Yes | Yes | Yes |
-| Scroll | Yes | Yes | Yes |
-| Element Refs | No | Yes | Yes |
-| Named Pages | No | Yes | Yes |
-| **Batch Execution** | No | No | **Yes** |
-| **Minimal Responses** | No | No | **Yes** |
-| **Diff Updates** | No | No | **Yes** |
-| **Scoped Snapshots** | No | Partial | **Yes** |
-| **Ultra-Compact Format** | JSON | YAML | **70%+ smaller** |
+|---------|:-------------:|:-----------:|:--------:|
+| Basic actions | ✓ | ✓ | ✓ |
+| Element refs | ✗ | ✓ | ✓ |
+| Multi-tab | ✗ | ✓ | ✓ |
+| **Batch execution** | ✗ | ✗ | **✓** |
+| **Minimal responses** | ✗ | ✗ | **✓** |
+| **Ultra-compact format** | ✗ | ✗ | **✓** |
+| **Scoped snapshots** | ✗ | partial | **✓** |
+| **Diff updates** | ✗ | ✗ | **✓** |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Claude                           │
+└─────────────────────┬───────────────────────────────┘
+                      │ 1 batch call
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│                   μBrowser                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
+│  │ navigate│→ │  type   │→ │  click  │→ ...       │
+│  └─────────┘  └─────────┘  └─────────┘            │
+│                      │                              │
+│              ┌───────▼───────┐                     │
+│              │ Ultra-compact │                     │
+│              │   snapshot    │                     │
+│              └───────────────┘                     │
+└─────────────────────┬───────────────────────────────┘
+                      │ 1 response
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│                    Claude                           │
+│         (continues with minimal context)            │
+└─────────────────────────────────────────────────────┘
+```
 
 ## License
 
