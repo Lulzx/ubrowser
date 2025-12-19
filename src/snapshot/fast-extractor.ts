@@ -1,4 +1,5 @@
 import type { Page } from 'playwright';
+import { refManager } from '../refs/manager.js';
 
 // Pre-injected extraction script - avoids JIT overhead on repeated calls
 // This is the core optimization: inject once, call many times
@@ -146,7 +147,7 @@ export interface ExtractedElement {
   role: string;
   name: string;
   tag: string;
-  attributes: Record<string, string>;
+  attributes: Record<string, string | number>;
 }
 
 interface ExtractionResult {
@@ -223,17 +224,25 @@ export function getElementPosition(
   elements: ExtractedElement[],
   refId: string
 ): { x: number; y: number } | null {
-  // refId is like "e5", find element at index 4 (0-indexed)
+  const ref = refManager.resolve(refId);
+  if (ref) {
+    const matched = elements.find(el => el.selector === ref.selector);
+    if (!matched) return null;
+    const x = Number(matched.attributes._x);
+    const y = Number(matched.attributes._y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
+  }
+
+  // Fallback to index-based lookup for legacy refs
   const match = refId.match(/^e(\d+)$/);
   if (!match) return null;
-
   const index = parseInt(match[1], 10) - 1;
   if (index < 0 || index >= elements.length) return null;
 
   const el = elements[index];
-  const x = parseInt(el.attributes._x, 10);
-  const y = parseInt(el.attributes._y, 10);
-
-  if (isNaN(x) || isNaN(y)) return null;
+  const x = Number(el.attributes._x);
+  const y = Number(el.attributes._y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
   return { x, y };
 }

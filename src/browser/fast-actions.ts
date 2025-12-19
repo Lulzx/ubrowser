@@ -2,6 +2,7 @@ import type { Page, CDPSession } from 'playwright';
 
 // CDP session cache per page
 const cdpSessions = new WeakMap<Page, CDPSession>();
+const isMac = process.platform === 'darwin';
 
 // Get or create CDP session for direct browser communication
 async function getCDPSession(page: Page): Promise<CDPSession> {
@@ -61,17 +62,18 @@ export async function fastType(
 
   // Clear existing text if requested
   if (options?.clear !== false) {
+    const selectAllModifier = isMac ? 4 : 2; // Meta on macOS, Ctrl elsewhere
     // Select all and delete
     await cdp.send('Input.dispatchKeyEvent', {
       type: 'keyDown',
-      modifiers: 2, // Ctrl/Cmd
+      modifiers: selectAllModifier,
       key: 'a',
       code: 'KeyA',
       windowsVirtualKeyCode: 65,
     });
     await cdp.send('Input.dispatchKeyEvent', {
       type: 'keyUp',
-      modifiers: 2,
+      modifiers: selectAllModifier,
       key: 'a',
       code: 'KeyA',
       windowsVirtualKeyCode: 65,

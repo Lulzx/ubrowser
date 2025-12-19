@@ -66,25 +66,30 @@ export async function executeType(input: TypeInput): Promise<ToolResponse> {
     // Fallback to Playwright for reliability
     const locator = await refManager.getLocator(page, input.ref || input.selector!, { strict: false });
 
+    const shouldClear = input.clear !== false;
+    const delay = input.delay;
+    const pressEnter = input.pressEnter;
+
     // Clear and fill in one operation when possible (most common case)
-    if (input.clear !== false && !input.delay && !input.pressEnter) {
+    if (shouldClear && !delay && !pressEnter) {
       // fill() clears automatically and is fastest
       await locator.fill(input.text, { timeout });
     } else {
-      // Clear if requested (default: true)
-      if (input.clear !== false) {
-        await locator.clear({ timeout });
-      }
-      // Type with delay if specified, otherwise use fill() for speed
-      if (input.delay && input.delay > 0) {
-        await locator.type(input.text, { delay: input.delay, timeout });
+      if (shouldClear) {
+        if (delay && delay > 0) {
+          await locator.clear({ timeout });
+          await locator.type(input.text, { delay, timeout });
+        } else {
+          await locator.fill(input.text, { timeout });
+        }
       } else {
-        await locator.fill(input.text, { timeout });
+        if (delay && delay > 0) {
+          await locator.type(input.text, { delay, timeout });
+        } else {
+          await locator.type(input.text, { timeout });
+        }
       }
-      // Press Enter if requested
-      if (input.pressEnter) {
-        await locator.press('Enter', { timeout });
-      }
+      if (pressEnter) await locator.press('Enter', { timeout });
     }
 
     // Build response

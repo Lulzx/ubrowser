@@ -9,7 +9,7 @@ export function filterElements(
     role: string;
     name: string;
     tag: string;
-    attributes: Record<string, string>;
+    attributes: Record<string, string | number>;
   }>,
   options: { maxElements?: number } = {}
 ): ElementRef[] {
@@ -17,12 +17,19 @@ export function filterElements(
   const refs: ElementRef[] = [];
 
   for (const el of elements.slice(0, maxElements)) {
+    const filteredAttributes: Record<string, string> = {};
+    for (const [key, value] of Object.entries(el.attributes)) {
+      if (key.startsWith('_')) continue;
+      if (value === undefined || value === null) continue;
+      filteredAttributes[key] = String(value);
+    }
+
     const id = refManager.getOrCreate(
       el.selector,
       el.role,
       el.name,
       el.tag,
-      el.attributes
+      filteredAttributes
     );
 
     refs.push({
@@ -31,7 +38,7 @@ export function filterElements(
       role: el.role,
       name: el.name,
       tag: el.tag,
-      attributes: el.attributes,
+      attributes: filteredAttributes,
     });
   }
 

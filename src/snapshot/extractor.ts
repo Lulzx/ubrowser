@@ -26,7 +26,9 @@ export async function extractInteractiveElements(page: Page, scope?: string): Pr
     name: el.name,
     tag: el.tag,
     attributes: Object.fromEntries(
-      Object.entries(el.attributes).filter(([k]) => !k.startsWith('_'))
+      Object.entries(el.attributes)
+        .filter(([k]) => !k.startsWith('_'))
+        .map(([k, v]) => [k, String(v)])
     ),
   }));
 }

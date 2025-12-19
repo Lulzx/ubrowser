@@ -5,6 +5,7 @@ import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { refManager } from '../refs/manager.js';
 import { cleanError, type ToolResponse } from '../types.js';
+import { clearSnapshotElements } from './snapshot.js';
 
 // Schema for page management tool
 export const pagesSchema = z.object({
@@ -52,6 +53,7 @@ export async function executePages(input: PagesInput): Promise<PagesResult> {
         // Clear refs when creating new page
         refManager.clear();
         clearSnapshotCache();
+        clearSnapshotElements();
 
         const page = await browserManager.getPage(input.name);
         const result: PagesResult = {
@@ -79,6 +81,7 @@ export async function executePages(input: PagesInput): Promise<PagesResult> {
         // Clear refs when switching pages
         refManager.clear();
         clearSnapshotCache();
+        clearSnapshotElements();
 
         const page = await browserManager.switchPage(input.name);
         const result: PagesResult = {
@@ -103,9 +106,15 @@ export async function executePages(input: PagesInput): Promise<PagesResult> {
         if (!input.name) {
           return { ok: false, action: 'close', error: 'Page name required' };
         }
+        const currentBefore = browserManager.getCurrentPageName();
         const closed = await browserManager.closePage(input.name);
         if (!closed) {
           return { ok: false, action: 'close', error: `Page '${input.name}' not found` };
+        }
+        if (input.name === currentBefore) {
+          refManager.clear();
+          clearSnapshotCache();
+          clearSnapshotElements();
         }
         return {
           ok: true,

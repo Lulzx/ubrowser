@@ -4,7 +4,8 @@ import { refManager } from '../refs/manager.js';
 import { extractInteractiveElements, clearFastExtractorCache } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
-import { cleanError, type ToolResponse, type SnapshotOptions } from '../types.js';
+import { cleanError, type ToolResponse } from '../types.js';
+import { clearSnapshotElements } from './snapshot.js';
 
 // Schema for navigate tool
 export const navigateSchema = z.object({
@@ -24,13 +25,14 @@ export type NavigateInput = z.infer<typeof navigateSchema>;
 // Execute navigate
 export async function executeNavigate(input: NavigateInput): Promise<ToolResponse> {
   const page = await browserManager.getPage();
-  const timeout = input.timeout ?? 10000;
+  const timeout = input.timeout ?? 30000;
 
   try {
     // Clear refs and all caches on navigation
     refManager.clear();
     clearSnapshotCache();
     clearFastExtractorCache(page);
+    clearSnapshotElements();
 
     // Navigate
     await page.goto(input.url, {

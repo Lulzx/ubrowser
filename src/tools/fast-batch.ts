@@ -7,6 +7,7 @@ import { fastClick, fastType, fastKeyPress, fastScroll, fastFocus } from '../bro
 import { refManager } from '../refs/manager.js';
 import { clearSnapshotCache } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse, type BatchStep } from '../types.js';
+import { clearSnapshotElements } from './snapshot.js';
 import type { Page } from 'playwright';
 
 // Schema for batch tool
@@ -43,13 +44,14 @@ async function executeStepFast(page: Page, step: BatchStep): Promise<ToolRespons
     case 'navigate': {
       const url = step.args.url as string;
       const waitUntil = (step.args.waitUntil as 'load' | 'domcontentloaded' | 'networkidle') ?? 'domcontentloaded';
-      const timeout = (step.args.timeout as number) ?? 10000;
+      const timeout = (step.args.timeout as number) ?? 30000;
 
       // Clear caches on navigation
       refManager.clear();
       clearSnapshotCache();
       clearFastExtractorCache(page);
       lastElements = [];
+      clearSnapshotElements();
 
       await page.goto(url, { waitUntil, timeout });
       return { ok: true };
@@ -83,10 +85,11 @@ async function executeStepFast(page: Page, step: BatchStep): Promise<ToolRespons
       const text = step.args.text as string;
       const clear = step.args.clear !== false;
       const pressEnter = step.args.pressEnter as boolean | undefined;
+      const delay = step.args.delay as number | undefined;
       const timeout = (step.args.timeout as number) ?? 5000;
 
       // Try fast type if we have position
-      if (ref && lastElements.length > 0) {
+      if (ref && lastElements.length > 0 && !delay) {
         const pos = getElementPosition(lastElements, ref);
         if (pos) {
           // Focus the element first
@@ -102,11 +105,22 @@ async function executeStepFast(page: Page, step: BatchStep): Promise<ToolRespons
 
       // Fallback to Playwright
       const locator = await refManager.getLocator(page, ref || selector!, { strict: false });
-      if (clear && !pressEnter) {
+      if (clear && !delay && !pressEnter) {
         await locator.fill(text, { timeout });
+      } else if (clear) {
+        if (delay && delay > 0) {
+          await locator.clear({ timeout });
+          await locator.type(text, { delay, timeout });
+        } else {
+          await locator.fill(text, { timeout });
+        }
+        if (pressEnter) await locator.press('Enter', { timeout });
       } else {
-        if (clear) await locator.clear({ timeout });
-        await locator.fill(text, { timeout });
+        if (delay && delay > 0) {
+          await locator.type(text, { delay, timeout });
+        } else {
+          await locator.type(text, { timeout });
+        }
         if (pressEnter) await locator.press('Enter', { timeout });
       }
       return { ok: true };
@@ -133,7 +147,7 @@ async function executeStepFast(page: Page, step: BatchStep): Promise<ToolRespons
 
     case 'scroll': {
       const direction = step.args.direction as 'up' | 'down' | 'left' | 'right' | undefined;
-      const amount = (step.args.amount as number) ?? 300;
+      const amount = (step.args.amount as number) ?? 500;
       const toTop = step.args.toTop as boolean | undefined;
       const toBottom = step.args.toBottom as boolean | undefined;
       const ref = step.args.ref as string | undefined;
