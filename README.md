@@ -10,7 +10,7 @@ Playwright    ██████████████████████
 
 ## Benchmarks
 
-Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) game-tracker task with Claude Opus 4.5:
+Tested on [dev-browser-eval](dev-browser-eval/) game-tracker task with Claude Opus 4.5 (benchmark setup cloned from [SawyerHood](https://github.com/SawyerHood), eval tasks created independently):
 
 | Method | Time | Cost | Turns |
 |--------|------|------|-------|
@@ -22,6 +22,13 @@ Tested on [dev-browser-eval](https://github.com/SawyerHood/dev-browser-eval) gam
 - 5× faster than Dev Browser
 - 5× cheaper than Dev Browser
 - 8× cheaper than Playwright MCP
+
+Latest local run (dev-browser-eval simulation, HN proxy):
+
+| Method | Time | Cost | Turns | Tokens |
+|--------|------|------|-------|--------|
+| Traditional (6 calls) | 17.36s | $0.1439 | 6 | 2177 |
+| μBrowser (batch) | 6.87s | $0.0052 | 1 | 204 |
 
 ## How It Works
 
@@ -35,7 +42,7 @@ Combine 25+ browser actions into a single API call:
   {"tool": "type", "args": {"selector": "#email", "text": "user@test.com"}},
   {"tool": "type", "args": {"selector": "#pass", "text": "secret"}},
   {"tool": "click", "args": {"selector": "button[type=submit]"}}
-], "snapshot": {"when": "final"}}
+], "snapshot": {"when": "final", "maxElements": 40}}
 ```
 
 Others make 4 separate calls. We make 1. **75% fewer API calls.**
@@ -66,6 +73,17 @@ inp#e3@p~"Password"
 ```
 
 Only return DOM when explicitly requested.
+
+## Speed + Cost Tuning
+
+Environment variables:
+
+- `UBROWSER_BLOCK_STYLESHEETS=1` blocks CSS for faster loads (may affect layout-dependent pages).
+- `UBROWSER_MAX_ELEMENTS=40` caps snapshots by default when `maxElements` is not provided.
+
+Snapshot options (per-call overrides):
+
+- `snapshot.maxElements` limits returned elements for `browser_snapshot`, per-tool snapshots, and `browser_batch`.
 
 ## Implementation Details
 
@@ -194,6 +212,19 @@ MCP server-side benchmarks (not including LLM response time):
 | Cached snapshot | 0.5ms |
 | 4-step batch | 34ms |
 | Type operation | 12-16ms |
+
+DOM-heavy snapshot cap (data page with 500+ interactive elements):
+
+| Mode | Elements | Snapshot Size (body) |
+|------|----------|-----------------------|
+| baseline | 100 | 1881 chars |
+| maxElements=40 | 40 | 740 chars |
+
+Run locally:
+```
+node bench-game-tracker.cjs
+node bench-dom-heavy.cjs
+```
 
 ## License
 
