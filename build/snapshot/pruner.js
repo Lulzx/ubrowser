@@ -5,14 +5,22 @@ export function filterElements(elements, options = {}) {
     const maxElements = options.maxElements ?? 100;
     const refs = [];
     for (const el of elements.slice(0, maxElements)) {
-        const id = refManager.getOrCreate(el.selector, el.role, el.name, el.tag, el.attributes);
+        const filteredAttributes = {};
+        for (const [key, value] of Object.entries(el.attributes)) {
+            if (key.startsWith('_'))
+                continue;
+            if (value === undefined || value === null)
+                continue;
+            filteredAttributes[key] = String(value);
+        }
+        const id = refManager.getOrCreate(el.selector, el.role, el.name, el.tag, filteredAttributes);
         refs.push({
             id,
             selector: el.selector,
             role: el.role,
             name: el.name,
             tag: el.tag,
-            attributes: el.attributes,
+            attributes: filteredAttributes,
         });
     }
     return refs;

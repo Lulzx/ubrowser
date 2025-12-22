@@ -1,5 +1,9 @@
 import type { Page } from 'playwright';
-export declare function extractInteractiveElements(page: Page, scope?: string): Promise<Array<{
+import { clearFastExtractorCache } from './fast-extractor.js';
+export { clearFastExtractorCache };
+export declare function extractInteractiveElements(page: Page, scope?: string, options?: {
+    maxElements?: number;
+}): Promise<Array<{
     selector: string;
     role: string;
     name: string;

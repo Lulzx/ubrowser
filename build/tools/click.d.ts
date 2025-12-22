@@ -9,60 +9,67 @@ export declare const clickSchema: z.ZodEffects<z.ZodObject<{
         include: z.ZodOptional<z.ZodBoolean>;
         scope: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
+        maxElements: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }>>;
     timeout: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     button?: "left" | "right" | "middle" | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
+    clickCount?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clickCount?: number | undefined;
 }, {
     button?: "left" | "right" | "middle" | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
+    clickCount?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clickCount?: number | undefined;
 }>, {
     button?: "left" | "right" | "middle" | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
+    clickCount?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clickCount?: number | undefined;
 }, {
     button?: "left" | "right" | "middle" | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
+    clickCount?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clickCount?: number | undefined;
 }>;
 export type ClickInput = z.infer<typeof clickSchema>;
 export declare function executeClick(input: ClickInput): Promise<ToolResponse>;
@@ -101,6 +108,9 @@ export declare const clickTool: {
                     format: {
                         type: string;
                         enum: string[];
+                    };
+                    maxElements: {
+                        type: string;
                     };
                 };
             };

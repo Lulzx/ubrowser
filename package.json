@@ -1,6 +1,6 @@
 {
   "name": "ubrowser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "μBrowser - Micro browser automation with 98% token reduction",
   "type": "module",
   "main": "build/index.js",

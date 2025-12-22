@@ -4,6 +4,7 @@ import { extractInteractiveElementsFast, type ExtractedElement } from '../snapsh
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse } from '../types.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 
 // Shared cache of last extracted elements - used by click/type tools for fast operations
 let lastElements: ExtractedElement[] = [];
@@ -23,11 +24,12 @@ export async function executeSnapshot(input: SnapshotInput): Promise<ToolRespons
 
   try {
     // Parallel fetch of url, title, and elements using fast extractor
+    const maxElements = input.maxElements ?? DEFAULT_MAX_ELEMENTS;
     const [url, title, elements] = await Promise.all([
       Promise.resolve(page.url()), // url() is synchronous in Playwright
       page.title(),
       extractInteractiveElementsFast(page, input.scope, {
-        maxElements: input.maxElements,
+        maxElements,
         skipCache: input.format === 'diff', // Force fresh extraction for diff mode
       }),
     ]);
@@ -36,7 +38,7 @@ export async function executeSnapshot(input: SnapshotInput): Promise<ToolRespons
     lastElements = elements;
 
     // Filter and format
-    const refs = filterElements(elements, { maxElements: input.maxElements });
+    const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
     const snapshot = formatSnapshot(refs, url, title, input.format ?? 'compact');
 
     return {

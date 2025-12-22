@@ -41,6 +41,7 @@ export interface SnapshotOptions {
   include?: boolean;      // Default: false
   scope?: string;         // CSS selector to scope
   format?: 'compact' | 'full' | 'diff' | 'minimal';
+  maxElements?: number;   // Limit elements for smaller snapshots
 }
 
 // Common tool options
@@ -60,6 +61,7 @@ export interface BatchSnapshotOptions {
   when: 'never' | 'final' | 'each' | 'on-error';
   scope?: string;
   format?: 'compact' | 'full' | 'diff';
+  maxElements?: number;
 }
 
 // Browser state

@@ -12,6 +12,7 @@ export const batchSchema = z.object({
     when: z.enum(['never', 'final', 'each', 'on-error']).optional().describe('When to take snapshots'),
     scope: z.string().optional().describe('CSS selector to scope snapshots'),
     format: z.enum(['compact', 'full', 'diff']).optional().describe('Snapshot format (default: compact)'),
+    maxElements: z.number().optional().describe('Maximum number of elements to return'),
   }).optional().describe('Snapshot options'),
   stopOnError: z.boolean().optional().describe('Stop execution on first error (default: true)'),
 });
@@ -72,6 +73,7 @@ Returns ultra-compact snapshot format: tag#ref@type~"placeholder"/href"text"!fla
           when: { type: 'string', enum: ['never', 'final', 'each', 'on-error'], description: 'When to take snapshots (default: final)' },
           scope: { type: 'string', description: 'CSS selector to scope snapshots' },
           format: { type: 'string', enum: ['compact', 'full', 'diff'], description: 'Snapshot format (default: compact)' },
+          maxElements: { type: 'number', description: 'Maximum number of elements to return' },
         },
       },
       stopOnError: { type: 'boolean', description: 'Stop on first error (default: true)' },

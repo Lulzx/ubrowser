@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { browserManager } from './browser/manager.js';
-import { navigateTool, executeNavigate, clickTool, executeClick, typeTool, executeType, selectTool, executeSelect, scrollTool, executeScroll, snapshotTool, executeSnapshot, batchTool, executeBatch, inspectTool, executeInspect, pagesTool, executePages, } from './tools/index.js';
+import { navigateTool, executeNavigate, clickTool, executeClick, typeTool, executeType, selectTool, executeSelect, scrollTool, executeScroll, snapshotTool, executeSnapshot, batchTool, executeBatch, inspectTool, executeInspect, pagesTool, executePages, consoleTool, executeConsole, networkTool, executeNetwork, } from './tools/index.js';
 // Create MCP server
 const server = new McpServer({
     name: 'ubrowser',
@@ -17,6 +17,7 @@ server.tool(navigateTool.name, navigateTool.description, {
         include: z.boolean().optional(),
         scope: z.string().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
@@ -35,6 +36,7 @@ server.tool(clickTool.name, clickTool.description, {
         include: z.boolean().optional(),
         scope: z.string().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
@@ -55,6 +57,7 @@ server.tool(typeTool.name, typeTool.description, {
         include: z.boolean().optional(),
         scope: z.string().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
@@ -74,6 +77,7 @@ server.tool(selectTool.name, selectTool.description, {
         include: z.boolean().optional(),
         scope: z.string().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
@@ -94,6 +98,7 @@ server.tool(scrollTool.name, scrollTool.description, {
         include: z.boolean().optional(),
         scope: z.string().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
     timeout: z.number().optional(),
 }, async (args) => {
@@ -123,6 +128,7 @@ server.tool(batchTool.name, batchTool.description, {
         when: z.enum(['never', 'final', 'each', 'on-error']).optional(),
         scope: z.string().optional(),
         format: z.enum(['compact', 'full', 'diff']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
     stopOnError: z.boolean().optional(),
 }, async (args) => {
@@ -137,6 +143,7 @@ server.tool(inspectTool.name, inspectTool.description, {
     depth: z.number().optional(),
     includeText: z.boolean().optional(),
     format: z.enum(['compact', 'full', 'minimal']).optional(),
+    maxElements: z.number().optional(),
 }, async (args) => {
     const result = await executeInspect(args);
     return {
@@ -150,9 +157,32 @@ server.tool(pagesTool.name, pagesTool.description, {
     snapshot: z.object({
         include: z.boolean().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional(),
 }, async (args) => {
     const result = await executePages(args);
+    return {
+        content: [{ type: 'text', text: JSON.stringify(result) }],
+    };
+});
+// Register browser_console tool - Console message access
+server.tool(consoleTool.name, consoleTool.description, {
+    action: z.enum(['get', 'clear']).describe('Action to perform'),
+    filter: z.enum(['all', 'log', 'error', 'warn', 'info', 'debug']).optional().describe('Filter by message type'),
+    limit: z.number().optional().describe('Limit number of messages'),
+}, async (args) => {
+    const result = await executeConsole(args);
+    return {
+        content: [{ type: 'text', text: JSON.stringify(result) }],
+    };
+});
+// Register browser_network tool - Network request inspection
+server.tool(networkTool.name, networkTool.description, {
+    action: z.enum(['get', 'clear']).describe('Action to perform'),
+    filter: z.string().optional().describe('URL pattern filter'),
+    limit: z.number().optional().describe('Limit number of requests'),
+}, async (args) => {
+    const result = await executeNetwork(args);
     return {
         content: [{ type: 'text', text: JSON.stringify(result) }],
     };

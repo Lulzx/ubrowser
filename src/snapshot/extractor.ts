@@ -9,7 +9,11 @@ export { clearFastExtractorCache };
 // 1. Script is pre-injected and JIT-cached (avoids re-compilation)
 // 2. getBoundingClientRect calls are batched (avoids layout thrashing)
 // 3. MutationObserver caching (returns cached result if DOM unchanged)
-export async function extractInteractiveElements(page: Page, scope?: string): Promise<Array<{
+export async function extractInteractiveElements(
+  page: Page,
+  scope?: string,
+  options?: { maxElements?: number }
+): Promise<Array<{
   selector: string;
   role: string;
   name: string;
@@ -17,7 +21,9 @@ export async function extractInteractiveElements(page: Page, scope?: string): Pr
   attributes: Record<string, string>;
 }>> {
   // Use the fast extractor with all optimizations
-  const elements = await extractInteractiveElementsFast(page, scope);
+  const elements = await extractInteractiveElementsFast(page, scope, {
+    maxElements: options?.maxElements,
+  });
 
   // Filter out internal position attributes before returning
   return elements.map(el => ({

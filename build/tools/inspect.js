@@ -4,12 +4,14 @@ import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
 import { cleanError } from '../types.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 // Schema for inspect tool
 export const inspectSchema = z.object({
     selector: z.string().describe('CSS selector of element to inspect'),
     depth: z.number().optional().describe('Max depth of nested elements to include (default: 3)'),
     includeText: z.boolean().optional().describe('Include text content of elements'),
     format: z.enum(['compact', 'full', 'minimal']).optional().describe('Output format (default: compact)'),
+    maxElements: z.number().optional().describe('Maximum number of elements to return'),
 });
 // Execute inspect
 export async function executeInspect(input) {
@@ -59,8 +61,9 @@ export async function executeInspect(input) {
         if (input.format !== 'minimal') {
             const url = page.url();
             const title = await page.title();
-            const elements = await extractInteractiveElements(page, input.selector);
-            const refs = filterElements(elements, { maxElements: 50 });
+            const maxElements = input.maxElements ?? DEFAULT_MAX_ELEMENTS ?? 50;
+            const elements = await extractInteractiveElements(page, input.selector, { maxElements });
+            const refs = filterElements(elements, { maxElements });
             result.snapshot = formatSnapshot(refs, url, title, input.format ?? 'compact');
         }
         return result;
@@ -84,6 +87,7 @@ export const inspectTool = {
             depth: { type: 'number', description: 'Max depth of nested elements (default: 3)' },
             includeText: { type: 'boolean', description: 'Include text content' },
             format: { type: 'string', enum: ['compact', 'full', 'minimal'], description: 'Output format (default: compact)' },
+            maxElements: { type: 'number', description: 'Maximum number of elements to return' },
         },
         required: ['selector'],
     },

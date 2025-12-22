@@ -5,6 +5,8 @@ import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { refManager } from '../refs/manager.js';
 import { cleanError } from '../types.js';
+import { clearSnapshotElements } from './snapshot.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 // Schema for page management tool
 export const pagesSchema = z.object({
     action: z.enum(['list', 'create', 'switch', 'close']).describe('Action to perform'),
@@ -12,6 +14,7 @@ export const pagesSchema = z.object({
     snapshot: z.object({
         include: z.boolean().optional(),
         format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+        maxElements: z.number().optional(),
     }).optional().describe('Include snapshot after switching'),
 });
 // Execute pages action
@@ -35,6 +38,7 @@ export async function executePages(input) {
                 // Clear refs when creating new page
                 refManager.clear();
                 clearSnapshotCache();
+                clearSnapshotElements();
                 const page = await browserManager.getPage(input.name);
                 const result = {
                     ok: true,
@@ -45,8 +49,9 @@ export async function executePages(input) {
                 if (input.snapshot?.include) {
                     const url = page.url();
                     const title = await page.title();
-                    const elements = await extractInteractiveElements(page);
-                    const refs = filterElements(elements);
+                    const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+                    const elements = await extractInteractiveElements(page, undefined, maxElements ? { maxElements } : undefined);
+                    const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
                     result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
                 }
                 return result;
@@ -58,6 +63,7 @@ export async function executePages(input) {
                 // Clear refs when switching pages
                 refManager.clear();
                 clearSnapshotCache();
+                clearSnapshotElements();
                 const page = await browserManager.switchPage(input.name);
                 const result = {
                     ok: true,
@@ -68,8 +74,9 @@ export async function executePages(input) {
                 if (input.snapshot?.include) {
                     const url = page.url();
                     const title = await page.title();
-                    const elements = await extractInteractiveElements(page);
-                    const refs = filterElements(elements);
+                    const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+                    const elements = await extractInteractiveElements(page, undefined, maxElements ? { maxElements } : undefined);
+                    const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
                     result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
                 }
                 return result;
@@ -78,9 +85,15 @@ export async function executePages(input) {
                 if (!input.name) {
                     return { ok: false, action: 'close', error: 'Page name required' };
                 }
+                const currentBefore = browserManager.getCurrentPageName();
                 const closed = await browserManager.closePage(input.name);
                 if (!closed) {
                     return { ok: false, action: 'close', error: `Page '${input.name}' not found` };
+                }
+                if (input.name === currentBefore) {
+                    refManager.clear();
+                    clearSnapshotCache();
+                    clearSnapshotElements();
                 }
                 return {
                     ok: true,
@@ -127,6 +140,7 @@ Example: Open login in one page, dashboard in another:
                 properties: {
                     include: { type: 'boolean' },
                     format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
+                    maxElements: { type: 'number' },
                 },
             },
         },

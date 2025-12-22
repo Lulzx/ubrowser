@@ -8,6 +8,7 @@ import { refManager } from '../refs/manager.js';
 import { clearSnapshotCache } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse, type BatchStep } from '../types.js';
 import { clearSnapshotElements } from './snapshot.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 import type { Page } from 'playwright';
 
 // Schema for batch tool
@@ -20,6 +21,7 @@ export const fastBatchSchema = z.object({
     when: z.enum(['never', 'final', 'each', 'on-error']).optional().describe('When to take snapshots'),
     scope: z.string().optional().describe('CSS selector to scope snapshots'),
     format: z.enum(['compact', 'full', 'diff']).optional().describe('Snapshot format (default: compact)'),
+    maxElements: z.number().optional().describe('Maximum number of elements to return'),
   }).optional().describe('Snapshot options'),
   stopOnError: z.boolean().optional().describe('Stop execution on first error (default: true)'),
 });
@@ -196,19 +198,23 @@ async function executeStepFast(page: Page, step: BatchStep): Promise<ToolRespons
 async function takeSnapshotFast(
   page: Page,
   scope?: string,
-  format?: 'compact' | 'full' | 'diff'
+  format?: 'compact' | 'full' | 'diff',
+  maxElements?: number
 ): Promise<string> {
   // Use fast extraction
   const [url, title, elements] = await Promise.all([
     Promise.resolve(page.url()), // url() is synchronous
     page.title(),
-    extractInteractiveElementsFast(page, scope, { skipCache: format === 'diff' }),
+    extractInteractiveElementsFast(page, scope, {
+      skipCache: format === 'diff',
+      maxElements,
+    }),
   ]);
 
   // Store for fast operations
   lastElements = elements;
 
-  const refs = filterElements(elements);
+  const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
   return formatSnapshot(refs, url, title, format ?? 'compact');
 }
 
@@ -216,6 +222,7 @@ async function takeSnapshotFast(
 export async function executeFastBatch(input: FastBatchInput): Promise<BatchResult> {
   const page = await browserManager.getPage();
   const snapshotConfig = input.snapshot ?? { when: 'final' };
+  const snapshotMaxElements = snapshotConfig.maxElements ?? DEFAULT_MAX_ELEMENTS;
   const stopOnError = input.stopOnError !== false;
 
   const result: BatchResult = { ok: true };
@@ -227,7 +234,9 @@ export async function executeFastBatch(input: FastBatchInput): Promise<BatchResu
   );
   if (needsPositions && lastElements.length === 0) {
     // Get initial snapshot for positions
-    await extractInteractiveElementsFast(page, snapshotConfig.scope).then(els => {
+    await extractInteractiveElementsFast(page, snapshotConfig.scope, {
+      maxElements: snapshotMaxElements,
+    }).then(els => {
       lastElements = els;
     });
   }
@@ -242,7 +251,12 @@ export async function executeFastBatch(input: FastBatchInput): Promise<BatchResu
         completed++;
         // Take snapshot after each step if configured
         if (snapshotConfig.when === 'each') {
-          result.snap = await takeSnapshotFast(page, snapshotConfig.scope, snapshotConfig.format);
+          result.snap = await takeSnapshotFast(
+            page,
+            snapshotConfig.scope,
+            snapshotConfig.format,
+            snapshotMaxElements
+          );
         }
       } else {
         result.ok = false;
@@ -252,7 +266,12 @@ export async function executeFastBatch(input: FastBatchInput): Promise<BatchResu
 
         // Take snapshot on error if configured
         if (snapshotConfig.when === 'on-error') {
-          result.snap = await takeSnapshotFast(page, snapshotConfig.scope, snapshotConfig.format);
+          result.snap = await takeSnapshotFast(
+            page,
+            snapshotConfig.scope,
+            snapshotConfig.format,
+            snapshotMaxElements
+          );
         }
 
         if (stopOnError) break;
@@ -264,7 +283,12 @@ export async function executeFastBatch(input: FastBatchInput): Promise<BatchResu
       result.n = completed;
 
       if (snapshotConfig.when === 'on-error') {
-        result.snap = await takeSnapshotFast(page, snapshotConfig.scope, snapshotConfig.format);
+        result.snap = await takeSnapshotFast(
+          page,
+          snapshotConfig.scope,
+          snapshotConfig.format,
+          snapshotMaxElements
+        );
       }
 
       if (stopOnError) break;
@@ -273,7 +297,12 @@ export async function executeFastBatch(input: FastBatchInput): Promise<BatchResu
 
   // Take final snapshot if configured
   if (snapshotConfig.when === 'final' && (result.ok || !stopOnError)) {
-    result.snap = await takeSnapshotFast(page, snapshotConfig.scope, snapshotConfig.format);
+    result.snap = await takeSnapshotFast(
+      page,
+      snapshotConfig.scope,
+      snapshotConfig.format,
+      snapshotMaxElements
+    );
   }
 
   return result;

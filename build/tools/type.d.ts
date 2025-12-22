@@ -11,66 +11,73 @@ export declare const typeSchema: z.ZodEffects<z.ZodObject<{
         include: z.ZodOptional<z.ZodBoolean>;
         scope: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
+        maxElements: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }>>;
     timeout: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     text: string;
+    clear?: boolean | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clear?: boolean | undefined;
     pressEnter?: boolean | undefined;
     delay?: number | undefined;
 }, {
     text: string;
+    clear?: boolean | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clear?: boolean | undefined;
     pressEnter?: boolean | undefined;
     delay?: number | undefined;
 }>, {
     text: string;
+    clear?: boolean | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clear?: boolean | undefined;
     pressEnter?: boolean | undefined;
     delay?: number | undefined;
 }, {
     text: string;
+    clear?: boolean | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
-    clear?: boolean | undefined;
     pressEnter?: boolean | undefined;
     delay?: number | undefined;
 }>;
@@ -118,6 +125,9 @@ export declare const typeTool: {
                     format: {
                         type: string;
                         enum: string[];
+                    };
+                    maxElements: {
+                        type: string;
                     };
                 };
             };

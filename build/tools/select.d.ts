@@ -10,83 +10,92 @@ export declare const selectSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
         include: z.ZodOptional<z.ZodBoolean>;
         scope: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
+        maxElements: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }>>;
     timeout: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    label?: string | undefined;
     value?: string | undefined;
+    label?: string | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
     index?: number | undefined;
 }, {
-    label?: string | undefined;
     value?: string | undefined;
+    label?: string | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
     index?: number | undefined;
 }>, {
-    label?: string | undefined;
     value?: string | undefined;
+    label?: string | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
     index?: number | undefined;
 }, {
-    label?: string | undefined;
     value?: string | undefined;
+    label?: string | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
     index?: number | undefined;
 }>, {
-    label?: string | undefined;
     value?: string | undefined;
+    label?: string | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
     selector?: string | undefined;
     index?: number | undefined;
 }, {
-    label?: string | undefined;
     value?: string | undefined;
+    label?: string | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
@@ -133,6 +142,9 @@ export declare const selectTool: {
                     format: {
                         type: string;
                         enum: string[];
+                    };
+                    maxElements: {
+                        type: string;
                     };
                 };
             };

@@ -7,33 +7,38 @@ export declare const navigateSchema: z.ZodObject<{
         include: z.ZodOptional<z.ZodBoolean>;
         scope: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
+        maxElements: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }>>;
     timeout: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     url: string;
-    waitUntil?: "load" | "domcontentloaded" | "networkidle" | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
+    waitUntil?: "domcontentloaded" | "load" | "networkidle" | undefined;
     timeout?: number | undefined;
 }, {
     url: string;
-    waitUntil?: "load" | "domcontentloaded" | "networkidle" | undefined;
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
+    waitUntil?: "domcontentloaded" | "load" | "networkidle" | undefined;
     timeout?: number | undefined;
 }>;
 export type NavigateInput = z.infer<typeof navigateSchema>;
@@ -67,6 +72,10 @@ export declare const navigateTool: {
                     format: {
                         type: string;
                         enum: string[];
+                        description: string;
+                    };
+                    maxElements: {
+                        type: string;
                         description: string;
                     };
                 };

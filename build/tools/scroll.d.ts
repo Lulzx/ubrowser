@@ -11,21 +11,25 @@ export declare const scrollSchema: z.ZodObject<{
         include: z.ZodOptional<z.ZodBoolean>;
         scope: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff", "minimal"]>>;
+        maxElements: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }, {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     }>>;
     timeout: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
@@ -36,9 +40,10 @@ export declare const scrollSchema: z.ZodObject<{
     toBottom?: boolean | undefined;
 }, {
     snapshot?: {
-        include?: boolean | undefined;
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | "minimal" | undefined;
+        include?: boolean | undefined;
     } | undefined;
     timeout?: number | undefined;
     ref?: string | undefined;
@@ -93,6 +98,9 @@ export declare const scrollTool: {
                     format: {
                         type: string;
                         enum: string[];
+                    };
+                    maxElements: {
+                        type: string;
                     };
                 };
             };
