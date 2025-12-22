@@ -9,6 +9,8 @@ export { snapshotTool, executeSnapshot } from './snapshot.js';
 export { batchTool, executeBatch } from './batch.js';
 export { inspectTool, executeInspect } from './inspect.js';
 export { pagesTool, executePages } from './pages.js';
+export { consoleTool, executeConsole } from './console.js';
+export { networkTool, executeNetwork } from './network.js';
 
 // All tool definitions for MCP registration
 export const allTools = [
@@ -21,4 +23,6 @@ export const allTools = [
   { name: 'browser_batch', module: 'batch' },
   { name: 'browser_inspect', module: 'inspect' },
   { name: 'browser_pages', module: 'pages' },
+  { name: 'browser_console', module: 'console' },
+  { name: 'browser_network', module: 'network' },
 ] as const;

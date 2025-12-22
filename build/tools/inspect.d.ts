@@ -4,13 +4,16 @@ export declare const inspectSchema: z.ZodObject<{
     depth: z.ZodOptional<z.ZodNumber>;
     includeText: z.ZodOptional<z.ZodBoolean>;
     format: z.ZodOptional<z.ZodEnum<["compact", "full", "minimal"]>>;
+    maxElements: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     selector: string;
+    maxElements?: number | undefined;
     format?: "compact" | "full" | "minimal" | undefined;
     depth?: number | undefined;
     includeText?: boolean | undefined;
 }, {
     selector: string;
+    maxElements?: number | undefined;
     format?: "compact" | "full" | "minimal" | undefined;
     depth?: number | undefined;
     includeText?: boolean | undefined;
@@ -49,6 +52,10 @@ export declare const inspectTool: {
             format: {
                 type: string;
                 enum: string[];
+                description: string;
+            };
+            maxElements: {
+                type: string;
                 description: string;
             };
         };

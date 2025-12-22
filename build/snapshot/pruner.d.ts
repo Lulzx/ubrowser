@@ -4,7 +4,7 @@ export declare function filterElements(elements: Array<{
     role: string;
     name: string;
     tag: string;
-    attributes: Record<string, string>;
+    attributes: Record<string, string | number>;
 }>, options?: {
     maxElements?: number;
 }): ElementRef[];

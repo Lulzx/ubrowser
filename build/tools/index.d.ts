@@ -7,6 +7,8 @@ export { snapshotTool, executeSnapshot } from './snapshot.js';
 export { batchTool, executeBatch } from './batch.js';
 export { inspectTool, executeInspect } from './inspect.js';
 export { pagesTool, executePages } from './pages.js';
+export { consoleTool, executeConsole } from './console.js';
+export { networkTool, executeNetwork } from './network.js';
 export declare const allTools: readonly [{
     readonly name: "browser_navigate";
     readonly module: "navigate";
@@ -34,5 +36,11 @@ export declare const allTools: readonly [{
 }, {
     readonly name: "browser_pages";
     readonly module: "pages";
+}, {
+    readonly name: "browser_console";
+    readonly module: "console";
+}, {
+    readonly name: "browser_network";
+    readonly module: "network";
 }];
 //# sourceMappingURL=index.d.ts.map

@@ -80,10 +80,22 @@ Environment variables:
 
 - `UBROWSER_BLOCK_STYLESHEETS=1` blocks CSS for faster loads (may affect layout-dependent pages).
 - `UBROWSER_MAX_ELEMENTS=40` caps snapshots by default when `maxElements` is not provided.
+- `UBROWSER_PROFILE_DIR=~/.ubrowser/profile` browser profile directory for session persistence.
+- `UBROWSER_CONSOLE_LIMIT=100` max console messages to retain in buffer.
+- `UBROWSER_NETWORK_LIMIT=100` max network requests to retain in buffer.
 
 Snapshot options (per-call overrides):
 
 - `snapshot.maxElements` limits returned elements for `browser_snapshot`, per-tool snapshots, and `browser_batch`.
+
+## Session Persistence
+
+Browser state (cookies, localStorage, IndexedDB) persists to disk between MCP server restarts. This enables:
+- Staying logged in across sessions
+- Preserving form data and preferences
+- Maintaining shopping carts and app state
+
+Profile stored at `~/.ubrowser/profile` by default (customize with `UBROWSER_PROFILE_DIR`).
 
 ## Implementation Details
 
@@ -133,6 +145,8 @@ claude mcp add ubrowser -- node "$PWD/build/index.js"
 | `browser_snapshot` | Get interactive elements |
 | `browser_pages` | Manage multiple tabs |
 | `browser_inspect` | Deep inspect specific element |
+| `browser_console` | Access browser console logs |
+| `browser_network` | Inspect network requests |
 
 ## Format Reference
 
@@ -156,6 +170,8 @@ sel#e4"Country"          → <select>Country</select>
 | Navigate, click, type    | ✓              | ✓           | ✓        |
 | Element refs             | —              | ✓           | ✓        |
 | Multi-tab support        | —              | ✓           | ✓        |
+| Session persistence      | —              | ✓           | ✓        |
+| Console/network inspect  | —              | —           | ✓        |
 | Batch execution          | —              | —           | ✓        |
 | Compact snapshot format  | —              | —           | ✓        |
 | Scoped snapshots         | —              | partial     | ✓        |

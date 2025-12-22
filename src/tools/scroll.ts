@@ -5,6 +5,7 @@ import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse } from '../types.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 
 // Schema for scroll tool
 export const scrollSchema = z.object({
@@ -18,6 +19,7 @@ export const scrollSchema = z.object({
     include: z.boolean().optional(),
     scope: z.string().optional(),
     format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+    maxElements: z.number().optional(),
   }).optional(),
   timeout: z.number().optional(),
 });
@@ -69,8 +71,9 @@ export async function executeScroll(input: ScrollInput): Promise<ToolResponse> {
     if (input.snapshot?.include) {
       const url = page.url();
       const title = await page.title();
-      const elements = await extractInteractiveElements(page, input.snapshot.scope);
-      const refs = filterElements(elements);
+      const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+      const elements = await extractInteractiveElements(page, input.snapshot.scope, maxElements ? { maxElements } : undefined);
+      const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
       response.snapshot = formatSnapshot(
         refs,
         url,
@@ -107,6 +110,7 @@ export const scrollTool = {
           include: { type: 'boolean' },
           scope: { type: 'string' },
           format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
+          maxElements: { type: 'number' },
         },
       },
       timeout: { type: 'number' },

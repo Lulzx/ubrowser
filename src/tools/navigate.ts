@@ -6,6 +6,7 @@ import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse } from '../types.js';
 import { clearSnapshotElements } from './snapshot.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 
 // Schema for navigate tool
 export const navigateSchema = z.object({
@@ -16,6 +17,7 @@ export const navigateSchema = z.object({
     include: z.boolean().optional().describe('Include snapshot in response'),
     scope: z.string().optional().describe('CSS selector to scope snapshot'),
     format: z.enum(['compact', 'full', 'diff', 'minimal']).optional().describe('Snapshot format'),
+    maxElements: z.number().optional().describe('Maximum number of elements to return'),
   }).optional().describe('Snapshot options'),
   timeout: z.number().optional().describe('Timeout in ms (default: 30000)'),
 });
@@ -52,8 +54,9 @@ export async function executeNavigate(input: NavigateInput): Promise<ToolRespons
 
     // Include snapshot if requested
     if (input.snapshot?.include) {
-      const elements = await extractInteractiveElements(page, input.snapshot.scope);
-      const refs = filterElements(elements);
+      const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+      const elements = await extractInteractiveElements(page, input.snapshot.scope, maxElements ? { maxElements } : undefined);
+      const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
       response.snapshot = formatSnapshot(
         refs,
         url,
@@ -90,6 +93,7 @@ export const navigateTool = {
           include: { type: 'boolean', description: 'Include snapshot in response' },
           scope: { type: 'string', description: 'CSS selector to scope snapshot' },
           format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'], description: 'Snapshot format' },
+          maxElements: { type: 'number', description: 'Maximum number of elements to return' },
         },
         description: 'Snapshot options',
       },

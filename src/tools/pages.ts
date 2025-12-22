@@ -6,6 +6,7 @@ import { formatSnapshot, clearSnapshotCache } from '../snapshot/formatter.js';
 import { refManager } from '../refs/manager.js';
 import { cleanError, type ToolResponse } from '../types.js';
 import { clearSnapshotElements } from './snapshot.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 
 // Schema for page management tool
 export const pagesSchema = z.object({
@@ -14,6 +15,7 @@ export const pagesSchema = z.object({
   snapshot: z.object({
     include: z.boolean().optional(),
     format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+    maxElements: z.number().optional(),
   }).optional().describe('Include snapshot after switching'),
 });
 
@@ -66,8 +68,9 @@ export async function executePages(input: PagesInput): Promise<PagesResult> {
         if (input.snapshot?.include) {
           const url = page.url();
           const title = await page.title();
-          const elements = await extractInteractiveElements(page);
-          const refs = filterElements(elements);
+          const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+          const elements = await extractInteractiveElements(page, undefined, maxElements ? { maxElements } : undefined);
+          const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
           result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
         }
 
@@ -94,8 +97,9 @@ export async function executePages(input: PagesInput): Promise<PagesResult> {
         if (input.snapshot?.include) {
           const url = page.url();
           const title = await page.title();
-          const elements = await extractInteractiveElements(page);
-          const refs = filterElements(elements);
+          const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+          const elements = await extractInteractiveElements(page, undefined, maxElements ? { maxElements } : undefined);
+          const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
           result.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
         }
 
@@ -162,6 +166,7 @@ Example: Open login in one page, dashboard in another:
         properties: {
           include: { type: 'boolean' },
           format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
+          maxElements: { type: 'number' },
         },
       },
     },

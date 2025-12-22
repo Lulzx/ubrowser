@@ -1,4 +1,7 @@
 import { chromium } from 'playwright';
+import { mkdirSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 // Singleton browser manager for efficient resource usage
 // Now with named pages support for multi-page workflows
 class BrowserManager {
@@ -11,16 +14,26 @@ class BrowserManager {
     // Named pages for persistent multi-page workflows
     namedPages = new Map();
     currentPageName = 'default';
+    // Console and network capture
+    consoleMessages = [];
+    networkRequests = [];
+    pendingRequests = new Map();
+    CONSOLE_LIMIT = parseInt(process.env.UBROWSER_CONSOLE_LIMIT || '100', 10);
+    NETWORK_LIMIT = parseInt(process.env.UBROWSER_NETWORK_LIMIT || '100', 10);
     async initialize() {
         if (this.state.initialized)
             return;
-        this.state.browser = await chromium.launch({
+        const blockStylesheets = ['1', 'true'].includes((process.env.UBROWSER_BLOCK_STYLESHEETS || '').toLowerCase());
+        // Use persistent context for session persistence (cookies, localStorage, etc.)
+        const profileDir = process.env.UBROWSER_PROFILE_DIR || join(homedir(), '.ubrowser', 'profile');
+        mkdirSync(profileDir, { recursive: true });
+        this.state.context = await chromium.launchPersistentContext(profileDir, {
             headless: true,
-        });
-        this.state.context = await this.state.browser.newContext({
             viewport: { width: 1280, height: 720 },
             userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         });
+        // Browser may be null with persistent context
+        this.state.browser = this.state.context.browser();
         // Block unnecessary resources for faster page loads
         await this.state.context.route('**/*', (route) => {
             const resourceType = route.request().resourceType();
@@ -28,11 +41,76 @@ class BrowserManager {
             if (['image', 'font', 'media'].includes(resourceType)) {
                 return route.abort();
             }
+            if (blockStylesheets && resourceType === 'stylesheet') {
+                return route.abort();
+            }
             return route.continue();
         });
-        this.state.page = await this.state.context.newPage();
+        // Get existing page or create new one
+        const pages = this.state.context.pages();
+        this.state.page = pages.length > 0 ? pages[0] : await this.state.context.newPage();
+        this.setupPageHandlers(this.state.page);
         this.namedPages.set('default', this.state.page);
         this.state.initialized = true;
+    }
+    // Setup console and network handlers for a page
+    setupPageHandlers(page) {
+        // Console message capture
+        page.on('console', (msg) => {
+            this.consoleMessages.push({
+                type: msg.type(),
+                text: msg.text(),
+                timestamp: Date.now(),
+                url: msg.location().url || undefined,
+                line: msg.location().lineNumber || undefined,
+            });
+            // Ring buffer - keep only last N messages
+            while (this.consoleMessages.length > this.CONSOLE_LIMIT) {
+                this.consoleMessages.shift();
+            }
+        });
+        // Network request capture
+        page.on('request', (req) => {
+            const id = `${req.url()}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            const request = {
+                id,
+                url: req.url(),
+                method: req.method(),
+                resourceType: req.resourceType(),
+                timestamp: Date.now(),
+            };
+            this.pendingRequests.set(req.url() + req.method(), request);
+        });
+        page.on('response', (res) => {
+            const key = res.url() + res.request().method();
+            const pending = this.pendingRequests.get(key);
+            if (pending) {
+                pending.status = res.status();
+                pending.statusText = res.statusText();
+                pending.responseTime = Date.now() - pending.timestamp;
+                this.networkRequests.push(pending);
+                this.pendingRequests.delete(key);
+                // Ring buffer
+                while (this.networkRequests.length > this.NETWORK_LIMIT) {
+                    this.networkRequests.shift();
+                }
+            }
+        });
+        page.on('requestfailed', (req) => {
+            const key = req.url() + req.method();
+            const pending = this.pendingRequests.get(key);
+            if (pending) {
+                pending.failed = true;
+                pending.failureText = req.failure()?.errorText;
+                pending.responseTime = Date.now() - pending.timestamp;
+                this.networkRequests.push(pending);
+                this.pendingRequests.delete(key);
+                // Ring buffer
+                while (this.networkRequests.length > this.NETWORK_LIMIT) {
+                    this.networkRequests.shift();
+                }
+            }
+        });
     }
     // Get or create a named page
     async getPage(name) {
@@ -50,6 +128,7 @@ class BrowserManager {
             throw new Error('Context not initialized');
         }
         const newPage = await this.state.context.newPage();
+        this.setupPageHandlers(newPage);
         this.namedPages.set(pageName, newPage);
         this.currentPageName = pageName;
         this.state.page = newPage;
@@ -82,6 +161,7 @@ class BrowserManager {
                     // Create a new default page
                     if (this.state.context) {
                         this.state.page = await this.state.context.newPage();
+                        this.setupPageHandlers(this.state.page);
                         this.namedPages.set('default', this.state.page);
                         this.currentPageName = 'default';
                     }
@@ -108,10 +188,37 @@ class BrowserManager {
     }
     async getBrowser() {
         await this.initialize();
-        if (!this.state.browser) {
-            throw new Error('Browser not initialized');
-        }
         return this.state.browser;
+    }
+    // Console message methods
+    getConsoleMessages(filter, limit) {
+        let messages = [...this.consoleMessages];
+        if (filter && filter !== 'all') {
+            messages = messages.filter(m => m.type === filter);
+        }
+        if (limit) {
+            messages = messages.slice(-limit);
+        }
+        return messages;
+    }
+    clearConsoleMessages() {
+        this.consoleMessages = [];
+    }
+    // Network request methods
+    getNetworkRequests(urlFilter, limit) {
+        let requests = [...this.networkRequests];
+        if (urlFilter) {
+            const pattern = new RegExp(urlFilter.replace(/\*/g, '.*'));
+            requests = requests.filter(r => pattern.test(r.url));
+        }
+        if (limit) {
+            requests = requests.slice(-limit);
+        }
+        return requests;
+    }
+    clearNetworkRequests() {
+        this.networkRequests = [];
+        this.pendingRequests.clear();
     }
     async close() {
         // Close all named pages
@@ -121,11 +228,9 @@ class BrowserManager {
             }
         }
         this.namedPages.clear();
+        // With persistent context, closing context also closes browser
         if (this.state.context) {
             await this.state.context.close().catch(() => { });
-        }
-        if (this.state.browser) {
-            await this.state.browser.close().catch(() => { });
         }
         this.state = {
             browser: null,
@@ -134,6 +239,9 @@ class BrowserManager {
             initialized: false,
         };
         this.currentPageName = 'default';
+        this.consoleMessages = [];
+        this.networkRequests = [];
+        this.pendingRequests.clear();
     }
     isInitialized() {
         return this.state.initialized;

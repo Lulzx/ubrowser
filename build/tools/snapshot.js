@@ -1,25 +1,36 @@
 import { z } from 'zod';
 import { browserManager } from '../browser/manager.js';
-import { extractInteractiveElements } from '../snapshot/extractor.js';
+import { extractInteractiveElementsFast } from '../snapshot/fast-extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
 import { cleanError } from '../types.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
+// Shared cache of last extracted elements - used by click/type tools for fast operations
+let lastElements = [];
 // Schema for snapshot tool
 export const snapshotSchema = z.object({
     scope: z.string().optional().describe('CSS selector to scope the snapshot'),
     format: z.enum(['compact', 'full', 'diff', 'minimal']).optional().describe('Snapshot format (default: compact)'),
     maxElements: z.number().optional().describe('Maximum number of elements to return'),
 });
-// Execute snapshot
+// Execute snapshot using fast extractor
 export async function executeSnapshot(input) {
     const page = await browserManager.getPage();
     try {
-        const url = page.url();
-        const title = await page.title();
-        // Extract interactive elements
-        const elements = await extractInteractiveElements(page, input.scope);
-        const refs = filterElements(elements, { maxElements: input.maxElements });
-        // Format the snapshot
+        // Parallel fetch of url, title, and elements using fast extractor
+        const maxElements = input.maxElements ?? DEFAULT_MAX_ELEMENTS;
+        const [url, title, elements] = await Promise.all([
+            Promise.resolve(page.url()), // url() is synchronous in Playwright
+            page.title(),
+            extractInteractiveElementsFast(page, input.scope, {
+                maxElements,
+                skipCache: input.format === 'diff', // Force fresh extraction for diff mode
+            }),
+        ]);
+        // Update shared cache for fast click/type operations
+        lastElements = elements;
+        // Filter and format
+        const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
         const snapshot = formatSnapshot(refs, url, title, input.format ?? 'compact');
         return {
             ok: true,
@@ -34,6 +45,14 @@ export async function executeSnapshot(input) {
             error: cleanError(error),
         };
     }
+}
+// Get last extracted elements (for fast click/type)
+export function getLastSnapshotElements() {
+    return lastElements;
+}
+// Clear snapshot cache
+export function clearSnapshotElements() {
+    lastElements = [];
 }
 // Tool definition for MCP
 export const snapshotTool = {

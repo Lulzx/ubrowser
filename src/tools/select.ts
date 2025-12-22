@@ -5,6 +5,7 @@ import { extractInteractiveElements } from '../snapshot/extractor.js';
 import { filterElements } from '../snapshot/pruner.js';
 import { formatSnapshot } from '../snapshot/formatter.js';
 import { cleanError, type ToolResponse } from '../types.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 
 // Schema for select tool
 export const selectSchema = z.object({
@@ -17,6 +18,7 @@ export const selectSchema = z.object({
     include: z.boolean().optional(),
     scope: z.string().optional(),
     format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+    maxElements: z.number().optional(),
   }).optional(),
   timeout: z.number().optional(),
 }).refine(data => data.ref || data.selector, {
@@ -70,8 +72,9 @@ export async function executeSelect(input: SelectInput): Promise<ToolResponse> {
     if (input.snapshot?.include) {
       const url = page.url();
       const title = await page.title();
-      const elements = await extractInteractiveElements(page, input.snapshot.scope);
-      const refs = filterElements(elements);
+      const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
+      const elements = await extractInteractiveElements(page, input.snapshot.scope, maxElements ? { maxElements } : undefined);
+      const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
       response.snapshot = formatSnapshot(
         refs,
         url,
@@ -107,6 +110,7 @@ export const selectTool = {
           include: { type: 'boolean' },
           scope: { type: 'string' },
           format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
+          maxElements: { type: 'number' },
         },
       },
       timeout: { type: 'number' },

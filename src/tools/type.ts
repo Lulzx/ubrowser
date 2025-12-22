@@ -7,6 +7,7 @@ import { formatSnapshot } from '../snapshot/formatter.js';
 import { fastType, fastKeyPress, fastFocus } from '../browser/fast-actions.js';
 import { cleanError, type ToolResponse } from '../types.js';
 import { getLastSnapshotElements } from './snapshot.js';
+import { DEFAULT_MAX_ELEMENTS } from '../snapshot/limits.js';
 
 // Schema for type tool
 export const typeSchema = z.object({
@@ -20,6 +21,7 @@ export const typeSchema = z.object({
     include: z.boolean().optional(),
     scope: z.string().optional(),
     format: z.enum(['compact', 'full', 'diff', 'minimal']).optional(),
+    maxElements: z.number().optional(),
   }).optional(),
   timeout: z.number().optional(),
 }).refine(data => data.ref || data.selector, {
@@ -51,12 +53,13 @@ export async function executeType(input: TypeInput): Promise<ToolResponse> {
         // Build response
         const response: ToolResponse = { ok: true };
         if (input.snapshot?.include) {
+          const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
           const [url, title, elements] = await Promise.all([
             Promise.resolve(page.url()),
             page.title(),
-            extractInteractiveElementsFast(page, input.snapshot.scope),
+            extractInteractiveElementsFast(page, input.snapshot.scope, { maxElements }),
           ]);
-          const refs = filterElements(elements);
+          const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
           response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
         }
         return response;
@@ -97,12 +100,13 @@ export async function executeType(input: TypeInput): Promise<ToolResponse> {
 
     // Include snapshot if requested
     if (input.snapshot?.include) {
+      const maxElements = input.snapshot?.maxElements ?? DEFAULT_MAX_ELEMENTS;
       const [url, title, elements] = await Promise.all([
         Promise.resolve(page.url()),
         page.title(),
-        extractInteractiveElementsFast(page, input.snapshot.scope),
+        extractInteractiveElementsFast(page, input.snapshot.scope, { maxElements }),
       ]);
-      const refs = filterElements(elements);
+      const refs = filterElements(elements, maxElements ? { maxElements } : undefined);
       response.snapshot = formatSnapshot(refs, url, title, input.snapshot.format ?? 'compact');
     }
 
@@ -134,6 +138,7 @@ export const typeTool = {
           include: { type: 'boolean' },
           scope: { type: 'string' },
           format: { type: 'string', enum: ['compact', 'full', 'diff', 'minimal'] },
+          maxElements: { type: 'number' },
         },
       },
       timeout: { type: 'number' },

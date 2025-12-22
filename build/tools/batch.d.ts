@@ -14,11 +14,14 @@ export declare const batchSchema: z.ZodObject<{
         when: z.ZodOptional<z.ZodEnum<["never", "final", "each", "on-error"]>>;
         scope: z.ZodOptional<z.ZodString>;
         format: z.ZodOptional<z.ZodEnum<["compact", "full", "diff"]>>;
+        maxElements: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | undefined;
         when?: "never" | "final" | "each" | "on-error" | undefined;
     }, {
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | undefined;
         when?: "never" | "final" | "each" | "on-error" | undefined;
@@ -30,6 +33,7 @@ export declare const batchSchema: z.ZodObject<{
         args: Record<string, any>;
     }[];
     snapshot?: {
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | undefined;
         when?: "never" | "final" | "each" | "on-error" | undefined;
@@ -41,6 +45,7 @@ export declare const batchSchema: z.ZodObject<{
         args: Record<string, any>;
     }[];
     snapshot?: {
+        maxElements?: number | undefined;
         scope?: string | undefined;
         format?: "compact" | "full" | "diff" | undefined;
         when?: "never" | "final" | "each" | "on-error" | undefined;
@@ -94,6 +99,10 @@ export declare const batchTool: {
                     format: {
                         type: string;
                         enum: string[];
+                        description: string;
+                    };
+                    maxElements: {
+                        type: string;
                         description: string;
                     };
                 };

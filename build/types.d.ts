@@ -34,6 +34,7 @@ export interface SnapshotOptions {
     include?: boolean;
     scope?: string;
     format?: 'compact' | 'full' | 'diff' | 'minimal';
+    maxElements?: number;
 }
 export interface ToolOptions {
     snapshot?: SnapshotOptions;
@@ -47,6 +48,7 @@ export interface BatchSnapshotOptions {
     when: 'never' | 'final' | 'each' | 'on-error';
     scope?: string;
     format?: 'compact' | 'full' | 'diff';
+    maxElements?: number;
 }
 export interface BrowserState {
     browser: Browser | null;
